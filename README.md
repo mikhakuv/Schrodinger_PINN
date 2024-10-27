@@ -5,25 +5,37 @@ Although the basic approach remains same, many improvements are available:
 ### Wise Points Generation  
 Points can be generated with respect to residual value: higher residual corresponds to higher probability of being included into next training set. There are 3 different formulas of probability $P(x)$ which implement this idea:  
 
-$$P_1(x) \propto \frac{res(x) - min(res)}{max(res) - min(res)},\ \text{where}\ res(x) - \text{residual of the output at}\ x$$  
+$$P_1(x) \propto \nu_1$$  
 
-$$P_2(x) \propto P_1(x) + \lambda_1$$  
+$$P_2(x) \propto \nu_1 + \lambda_1$$  
 
-$$P_3(x) \propto 0.5\cdot(P_1(x)+\frac{sum\\_abs(x) - min(sum\\_abs)}{max(sum\\_abs) - min(sum\\_abs)}) + \lambda_2 \cdot max(),\ \text{where}\ sum\\_abs(x)=|Re(q(x))| + |Im(q(x))|$$
+$$P_3(x) \propto \frac{\nu_1 + \nu_2}{2} + \lambda_2 \cdot max\left(\frac{\nu_1 + \nu_2}{2}\right)$$
 
-$\lambda_1$ and $\lambda_2$ are constants and automatically set up as $\lambda_1=0.005$, $\lambda_2 = 0.01$.  
+Where:  
+
+$$\nu_1 = \frac{res(x) - min(res)}{max(res) - min(res)},\quad \text{where}\quad res(x) - \text{residual of the output at}\ x$$  
+
+$$\nu_2 = \frac{sum\\_abs(x) - min(sum\\_abs)}{max(sum\\_abs) - min(sum\\_abs)},\quad \text{where}\quad sum\\_abs(x)=|Re(q)| + |Im(q)|$$
+
+$$\lambda_1\ \text{and}\ \lambda_2\ \text{are constants and automatically set up as}\ \lambda_1=0.005,\ \lambda_2 = 0.01$$  
+
 To enable this option, set `PINN.points_gen_method` as `"first"`,`"second"` or `"third"` correspondingly. By default `PINN.points_gen_method = "random"`  
 ### Causal Loss  
 
 ### Loss Balancing  
-Active loss balancing is disabled by default, yet optionally ReLoBRaLo method is available as option.  
+Loss for PINN is defined as follows:  
 
-$$lambda_i = \tau*(\rho*lambda_i(iter-1) + (1-\rho) *\widehat{lambda_i}(iter)) + (1-\tau)*lambda_i(iter)$$  
+$$Loss = \lambda_i\cdot Loss_{ic} + \lambda_b\cdot Loss_{bc} + \lambda_f\cdot Loss_{eq}$$  
 
-где $\tau \in[0,1]$ - коэффициент, обозначающий затухание, $\rho \in[0,1]$ - случайное число, генерируется каждую итерацию,  
+Without active loss balancing, $\lambda_i,\ \lambda_b, \lambda_f$ are constant values, set as `PINN.lambda_i=10/12`, `PINN.lambda_b=1/12`, `PINN.lambda_f=1/12` by default. However, active loss balancing option is also available, namely ReloBRaLo method. It changes $\lambda_i,\ \lambda_b, \lambda_f$ dinamically according to the following formula:  
 
-$$\widehat{\lambda_i} = \frac{exp(\frac{loss_i(iter)}{loss_i(0)})}{\sum\limits_{j} exp(\frac{loss_j(iter)}{loss_j(0)})}$$  
+$$\lambda_n = \tau\cdot\left(\rho\cdot\lambda_n(iter-1) + (1-\rho)\cdot\widehat{\lambda_n}(iter)\right) + (1-\tau)\cdot\lambda_n(iter)$$  
 
+$$\text{where}\ \lambda_n(iter) = \frac{exp\left(\frac{loss_n(iter)}{loss_n(iter-1)}\right)}{\sum\limits_{k} exp\left(\frac{loss_k(iter)}{loss_k(iter-1)}\right)},\ \widehat{\lambda_n}(iter) = \frac{exp\left(\frac{loss_n(iter)}{loss_n(0)}\right)}{\sum\limits_{k} exp\left(\frac{loss_k(iter)}{loss_k(0)}\right)},$$  
+
+$$\tau \in[0,1] - \text{extinction coefficient},\ \rho \in[0,1] - \text{random lookback coefficient}$$
+
+Set `PINN.loss_bal_method="relobralo"` for using active loss balancing method. By default `PINN.loss_bal_method="none"`.
 ### Optimizers  
 Three optimizers are available: ADAM, LBFGS and NNCG. Amount of steps by each can be set using `PINN.adam_steps`, `PINN.lbfgs_steps` and `PINN.nncg_steps`. Moreover, exponential step decay can be established by `PINN.adam_step_decay`, `PINN.lbfgs_step_decay` `PINN.nncg_step_decay` combined with `PINN.decay_freq` which defines frequency of decay.  
 
