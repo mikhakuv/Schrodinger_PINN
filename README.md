@@ -81,6 +81,8 @@ $$$$
 
 $$\text{where}\ a_1,\ a_2,\ a_4,\ a_6,\ b_1,\ \chi,\ a,\ x_0,\ \theta_0 - \text{changeable parameters, while other parameters are found using following expressions:}$$
 
+$$k=1$$  
+
 $$A_1 = 2\chi\cdot\sqrt{\frac{a_2-6a_4 k^2 + 12a_4 k + 10a_4 + 75a_6 k^4 + 150a_6 k^2 + 91a_6}{b_1}}$$  
 
 $$C_0= a_1 + 2 a_2 k + 8a_4 k^3 + 96 a_6 k^5$$  
