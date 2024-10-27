@@ -21,6 +21,18 @@ $$\lambda_1\ \text{and}\ \lambda_2\ \text{are constants and automatically set up
 
 To enable this option, set `PINN.points_gen_method` as `"first"`,`"second"` or `"third"` correspondingly. By default `PINN.points_gen_method = "random"`  
 ### Causal Loss  
+By default, loss on equation is calculated as follows:  
+
+$$Loss_{eq} = \frac{1}{N_t}\sum_{k=1}^{N_t} Loss_{eq}(t_k),\ \text{where}\ Loss_{eq}(t_k)\ \text{is mean residual on points with}\ t=t_k$$  
+
+Causal loss employs differrent formula which represents the idea of causality in training:  
+
+$$Loss_{eq} = \frac{1}{N_t\cdot\sum_{k=1}^{N_t}w_k}\sum_{k=1}^{N_t} Loss_{eq}(t_k)\cdot w_k$$  
+
+$$\text{where}\ w_k = exp\left(-\varepsilon\cdot\sum_{i=1}^{k-1}Loss_{eq}(t_k)\right)\ \text{and}\ \varepsilon\ \text{is changeable parameter}$$  
+
+Causality means that if $Loss_{eq}(t)$ is high for $t<\tilde{t}$, then PINN will not be training on $t>\tilde{t}$ until $Loss_{eq}(t)$ for $t<\tilde{t}$ gets lower.  
+To enable this option, set `PINN.causal_loss = True` and adjust `PINN.epsilon`.  
 
 ### Loss Balancing  
 Loss for PINN is defined as follows:  
