@@ -52,8 +52,29 @@ Set `PINN.loss_bal_method="relobralo"` for using active loss balancing method. B
 Three optimizers are available: ADAM, LBFGS and NNCG. Amount of steps by each can be set using `PINN.adam_steps`, `PINN.lbfgs_steps` and `PINN.nncg_steps`. Moreover, exponential step decay can be established by `PINN.adam_step_decay`, `PINN.lbfgs_step_decay` `PINN.nncg_step_decay` combined with `PINN.decay_freq` which defines frequency of decay.  
 
 ## Plots and Statistics
-For accuracy evaluation plenty metrics and visualizations are available:  
+For accuracy evaluation following metrics are used:  
 
+$$Rel_h= \frac{\sqrt{\sum_{n=1}^{N} (|\hat{q_{n}}| - |q_{n}|)^2}}{\sqrt{\sum_{i=1}^{N} (q_{i})^2}}$$  
+
+$$max(Lw_1) = \max_{i \in T} \left ( \frac{|I_1 - \hat{I}_1(t_i)|}{I_1} \right ) \cdot 100\\%$$  
+
+$$mean(Lw_1) = \text{mean}_{i \in T} \left ( \frac{|I_1 - \hat{I}_1(t_i)|}{I_1} \right ) \cdot 100\\%$$  
+
+$$max(Lw_2) = \max_{i \in T} \left (\frac{|I_2 - \hat{I}_2(t_i)|}{I_2} \right ) \cdot 100\\%$$  
+
+$$mean(Lw_2) = \text{mean}_{i \in T} \left (\frac{|I_2 - \hat{I}_2(t_i)|}{I_2} \right ) \cdot 100\\%$$  
+
+$$\text{where hatted values are predicted values and unhatted values are ground truth}$$  
+
+Plenty visualizing options are available:  
+
+`PINN.train_hist(logscale=bool, step=int)` returns loss history with `step` intervals using or not using logscale:  
+
+`PINN.plot_residual(X=np.ndarray, T=np.ndarray))` plots residual of obtained solution:  
+
+`plot_comparison(X=np.ndarray, T=np.ndarray, Q_pred=np.ndarray, Q_truth=np.ndarray, savefig=bool, namefig=string)` shows comparison of `Q_pred` and `Q_truth`:  
+
+`plot_errors(X=np.ndarray, T=np.ndarray, Q_pred=np.ndarray, Q_truth=np.ndarray, savefig=bool, namefig=string, savetable=bool, nametable=string)` uses `Q_pred` and `Q_truth` to plot $|q(x,t)|$, $Lw_1(t)$, $Lw_2(t)$ and $Rel_h(t)$ and return dictionary with evaluated metrics:  
 
 ## Problems  
 Two problems are given as an example:
