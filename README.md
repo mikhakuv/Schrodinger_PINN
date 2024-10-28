@@ -66,7 +66,7 @@ $$\alpha=1,\quad \beta=0$$
 
 solution:  
 
-$$q(x,t)=\frac{(k^2-w)e^{\sqrt{k^2-w}(x-2kt-x_0)}*e^{i(kx-wt+\theta_0)}}{\frac{1}{16}+2(k^2-w)*e^{2\sqrt{k^2-w}(x-2kt-x_0)}}$$  
+$$q(x,t)=\frac{(k^2-w)e^{\sqrt{k^2-w}\cdot (x-2kt-x_0)}}{\frac{1}{16}+2(k^2-w)\cdot e^{2\cdot\sqrt{k^2-w}\cdot (x-2kt-x_0)}}\cdot e^{i(kx-wt+\theta_0)}$$  
 
 $$\text{where}\ k,\ w,\ x_0,\ \theta_0\ \text{are changeable parameters}$$  
 
@@ -77,25 +77,21 @@ $$iq_t + ia_1q_x + a_2q_{xx} + ia_3q_{3x} + a_4q_{4x} + ia_5q_{5x} + a_6q_{6x} +
 
 solution:  
 
-$$$$
+$$q(x,t) = \frac{A_1}{a e^{(x-C_0 t + x_0)} + \frac{\chi}{4a}\cdot e^{-(x-C_0 t + x_0)}}\cdot e^{i(kx-wt+\theta_0)}$$
 
 $$\text{where}\ a_1,\ a_2,\ a_4,\ a_6,\ b_1,\ \chi,\ a,\ x_0,\ \theta_0 - \text{changeable parameters, while other parameters are found using following expressions:}$$
 
 $$k=1$$  
 
-$$A_1 = 2\chi\cdot\sqrt{\frac{a_2-6a_4 k^2 + 12a_4 k + 10a_4 + 75a_6 k^4 + 150a_6 k^2 + 91a_6}{b_1}}$$  
+$$A_1 = \sqrt{2\chi\cdot\frac{a_2-6a_4 k^2 + 12a_4 k + 10a_4 + 75a_6 k^4 + 150a_6 k^2 + 91a_6}{b_1}}$$  
 
 $$C_0= a_1 + 2 a_2 k + 8a_4 k^3 + 96 a_6 k^5$$  
 
 $$w = a_1 k + a_2 k^2 - a_2 + 3a_4 k^4 - 6 a_4 k^2 - a_4 + 35 a_6 k^6 - 75 a_6 k^4 - 15 a_6 k^2 - a_6$$  
 
-$$a_3 = -4a_4 k - 40 a_6 k^3$$  
+$$a_3 = -4a_4 k - 40 a_6 k^3,\quad a_5 = -6 a_6 k$$
 
-$$a_5 = -6 a_6 k$$
-
-$$b_2 = -(24 a_4*\chi^2 + 360 a_6 \chi^2) k^2 + 840 a_6 \frac{\chi^2}{A_1^4}$$  
-
-$$b_3 = 720 a_6 \frac{\chi^3}{A_1^6}$$  
+$$b_2 = -(24 a_4*\chi^2 + 360 a_6 \chi^2) k^2 + 840 a_6 \frac{\chi^2}{A_1^4},\quad b_3 = 720 a_6 \frac{\chi^3}{A_1^6}$$  
 
 ## Literature
 **1** *M. Raissi, P. Perdikaris, G.E. Karniadakis* Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations, Journal of Computational Physics, Volume 378, 2019, Pages 686-707  
