@@ -70,11 +70,19 @@ Plenty visualizing options are available:
 
 `PINN.train_hist(logscale=bool, step=int)` returns loss history with `step` intervals using or not using logscale:  
 
+<img src="https://github.com/mikhakuv/Schrodinger_PINN/blob/main/pictures/train_hist.png">  
+
 `PINN.plot_residual(X=np.ndarray, T=np.ndarray))` plots residual of obtained solution:  
+
+<img src="https://github.com/mikhakuv/Schrodinger_PINN/blob/main/pictures/plot_residual.png">  
 
 `plot_comparison(X=np.ndarray, T=np.ndarray, Q_pred=np.ndarray, Q_truth=np.ndarray, savefig=bool, namefig=string)` shows comparison of `Q_pred` and `Q_truth`:  
 
+<img src="https://github.com/mikhakuv/Schrodinger_PINN/blob/main/pictures/plot_comparison.png">  
+
 `plot_errors(X=np.ndarray, T=np.ndarray, Q_pred=np.ndarray, Q_truth=np.ndarray, savefig=bool, namefig=string, savetable=bool, nametable=string)` uses `Q_pred` and `Q_truth` to plot $|q(x,t)|$, $Lw_1(t)$, $Lw_2(t)$ and $Rel_h(t)$ and return dictionary with evaluated metrics:  
+
+<img src="https://github.com/mikhakuv/Schrodinger_PINN/blob/main/pictures/plot_errors.png">  
 
 ## Problems  
 Two problems are given as an example:
