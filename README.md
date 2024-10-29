@@ -108,7 +108,7 @@ solution:
 
 $$q(x,t) = \frac{A_1}{a e^{(x-C_0 t + x_0)} + \frac{\chi}{4a}\cdot e^{-(x-C_0 t + x_0)}}\cdot e^{i(kx-wt+\theta_0)}$$
 
-$$\text{where}\ a_1,\ a_2,\ a_4,\ a_6,\ b_1,\ \chi,\ a,\ x_0,\ \theta_0 - \text{changeable parameters, while other parameters are found using following expressions:}$$
+$$\text{where}\ a_1,\ a_2,\ a_4,\ a_6,\ b_1,\ \chi,\ a,\ x_0,\ \theta_0 - \text{changeable, while other parameters are found using following expressions:}$$
 
 $$k=1$$  
 
