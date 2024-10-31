@@ -126,11 +126,12 @@ $$a_3 = -4a_4 k - 40 a_6 k^3,\quad a_5 = -6 a_6 k$$
 $$b_2 = -(24 a_4*\chi^2 + 360 a_6 \chi^2) k^2 + 840 a_6 \frac{\chi^2}{A_1^4},\quad b_3 = 720 a_6 \frac{\chi^3}{A_1^6}$$  
 
 ## Literature
-**1** *M. Raissi, P. Perdikaris, G.E. Karniadakis* Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations, Journal of Computational Physics, Volume 378, 2019, Pages 686-707  
-**2** *Chenxi Wu, Min Zhu, Qinyang Tan, Yadhu Kartha, Lu Lu* A comprehensive study of non-adaptive and residual-based adaptive sampling for physics-informed neural networks, Computer Methods in Applied Mechanics and Engineering, Volume 403, Part A, 2023, 115671  
+**[1]** *M. Raissi, P. Perdikaris, G.E. Karniadakis* Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations, Journal of Computational Physics, Volume 378, 2019, Pages 686-707  
 
-**3** *Sifan Wang, Shyam Sankaran, Paris Perdikaris* Respecting causality for training physics-informed neural networks, Computer Methods in Applied Mechanics and Engineering, Volume 421, 2024, 116813  
+**[2]** *Chenxi Wu, Min Zhu, Qinyang Tan, Yadhu Kartha, Lu Lu* A comprehensive study of non-adaptive and residual-based adaptive sampling for physics-informed neural networks, Computer Methods in Applied Mechanics and Engineering, Volume 403, Part A, 2023, 115671  
 
-**4** *Rafael Bischof, Michael A. Kraus* Multi-Objective Loss Balancing for Physics-Informed Deep Learning, [https://arxiv.org/abs/2110.09813](https://arxiv.org/abs/2110.09813)  
+**[3]** *Sifan Wang, Shyam Sankaran, Paris Perdikaris* Respecting causality for training physics-informed neural networks, Computer Methods in Applied Mechanics and Engineering, Volume 421, 2024, 116813  
 
-**5** *Pratik Rathore, Weimu Lei, Zachary Frangella, Lu Lu, Madeleine Udell* Challenges in Training PINNs: A Loss Landscape Perspective, [https://arxiv.org/abs/2402.01868](https://arxiv.org/abs/2402.01868)  
+**[4]** *Rafael Bischof, Michael A. Kraus* Multi-Objective Loss Balancing for Physics-Informed Deep Learning, [https://arxiv.org/abs/2110.09813](https://arxiv.org/abs/2110.09813)  
+
+**[5]** *Pratik Rathore, Weimu Lei, Zachary Frangella, Lu Lu, Madeleine Udell* Challenges in Training PINNs: A Loss Landscape Perspective, [https://arxiv.org/abs/2402.01868](https://arxiv.org/abs/2402.01868)  
