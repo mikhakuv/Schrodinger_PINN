@@ -1,4 +1,4 @@
-This tool is designed to solve one-dimensional Schrödinger equations using Physics-Informed Neural Networks technology, proposed by Raissi et al [1].
+This tool is designed to solve one-dimensional Schrödinger equations using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature).
 
 ## Improvements
 Although the basic approach remains same, many improvements are available:  
@@ -19,13 +19,13 @@ $$\nu_2 = \frac{sum\\_abs(x) - min(sum\\_abs)}{max(sum\\_abs) - min(sum\\_abs)},
 
 $$\lambda_1\ \text{and}\ \lambda_2\ \text{are constants and automatically set up as}\ \lambda_1=0.005,\ \lambda_2 = 0.01$$  
 
-The idea was proposed in [2]. To enable this option, set `PINN.points_gen_method` as `"first"`,`"second"` or `"third"` correspondingly. By default `PINN.points_gen_method = "random"`  
+The idea was proposed in [[2]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature). To enable this option, set `PINN.points_gen_method` as `"first"`,`"second"` or `"third"` correspondingly. By default `PINN.points_gen_method = "random"`  
 ### Causal Loss  
 By default, loss on equation is calculated as follows:  
 
 $$Loss_{eq} = \frac{1}{N_t}\sum_{k=1}^{N_t} Loss_{eq}(t_k),\ \text{where}\ Loss_{eq}(t_k)\ \text{is mean residual on points with}\ t=t_k$$  
 
-Causal loss employs differrent formula which represents the idea of causality in training suggested in [3]:  
+Causal loss employs differrent formula which represents the idea of causality in training suggested in [[3]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature):  
 
 $$Loss_{eq} = \frac{1}{N_t\cdot\sum_{k=1}^{N_t}w_k}\sum_{k=1}^{N_t} Loss_{eq}(t_k)\cdot w_k$$  
 
@@ -39,7 +39,7 @@ Loss for PINN is defined as follows:
 
 $$Loss = \lambda_i\cdot Loss_{ic} + \lambda_b\cdot Loss_{bc} + \lambda_f\cdot Loss_{eq}$$  
 
-Without active loss balancing, $\lambda_i,\ \lambda_b, \lambda_f$ are constant values, set as `PINN.lambda_i=10/12`, `PINN.lambda_b=1/12`, `PINN.lambda_f=1/12` by default. However, active loss balancing option is also available, namely ReloBRaLo method which is introduced in [4]. It changes $\lambda_i,\ \lambda_b, \lambda_f$ dinamically according to the following formula:  
+Without active loss balancing, $\lambda_i,\ \lambda_b, \lambda_f$ are constant values, set as `PINN.lambda_i=10/12`, `PINN.lambda_b=1/12`, `PINN.lambda_f=1/12` by default. However, active loss balancing option is also available, namely ReloBRaLo method which is introduced in [[4]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature). It changes $\lambda_i,\ \lambda_b, \lambda_f$ dinamically according to the following formula:  
 
 $$\lambda_n = \tau\cdot\left(\rho\cdot\lambda_n(iter-1) + (1-\rho)\cdot\widehat{\lambda_n}(iter)\right) + (1-\tau)\cdot\lambda_n(iter)$$  
 
@@ -49,7 +49,7 @@ $$\tau \in[0,1] - \text{extinction coefficient},\ \rho \in[0,1] - \text{random l
 
 Set `PINN.loss_bal_method="relobralo"` for using active loss balancing method. By default `PINN.loss_bal_method="none"`.
 ### Optimizers  
-Three optimizers are available: ADAM, LBFGS and NNCG (see [5] for details). Amount of steps by each can be set using `PINN.adam_steps`, `PINN.lbfgs_steps` and `PINN.nncg_steps`. Moreover, exponential step decay can be established by `PINN.adam_step_decay`, `PINN.lbfgs_step_decay` `PINN.nncg_step_decay` combined with `PINN.decay_freq` which defines frequency of decay.  
+Three optimizers are available: ADAM, LBFGS and NNCG (see [[5]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature) for details). Amount of steps by each can be set using `PINN.adam_steps`, `PINN.lbfgs_steps` and `PINN.nncg_steps`. Moreover, exponential step decay can be established by `PINN.adam_step_decay`, `PINN.lbfgs_step_decay` `PINN.nncg_step_decay` combined with `PINN.decay_freq` which defines frequency of decay.  
 
 ## Plots and Statistics
 ### Metrics
