@@ -92,7 +92,7 @@ Two problems are given as an example:
 ### 2nd order  
 equation:  
 
-$$iq_t + q_{xx} + q |q|^2 (1 + \alpha |q|^2 + \beta |q|^4) = 0$$  
+$$iq_t + q_{xx} + q (|q|^2 + \alpha |q|^4 + \beta |q|^6) = 0$$  
 
 solution in case $\beta = 0$:  
 
