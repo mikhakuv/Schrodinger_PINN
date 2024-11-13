@@ -92,15 +92,15 @@ Two problems are given as an example:
 ### 2nd order  
 equation:  
 
-$$iq_t + q_{xx} + |q|^2 q (1 - \alpha |q|^2 + \beta |q|^4) = 0$$  
+$$iq_t + q_{xx} + q |q|^2 (1 + \alpha |q|^2 + \beta |q|^4) = 0$$  
 
-$$\alpha=1,\quad \beta=0$$  
+solution in case $\beta = 0$:  
 
-solution:  
+$$q(x,t)=\sqrt{\frac{4 \mu e^{\sqrt{\mu}(x-2k t - z_0)}}{1 + 4 e^{\sqrt{\mu}(x-2k t - z_0)} + (4 + 4 \mu \nu) e^{2\sqrt{\mu}(x-2k t - z_0)}}}\cdot e^{i(kx-wt+\theta_0)}$$  
 
-$$q(x,t)=\frac{(k^2-w)e^{\sqrt{k^2-w}\cdot (x-2kt-x_0)}}{\frac{1}{16}+2(k^2-w)\cdot e^{2\cdot\sqrt{k^2-w}\cdot (x-2kt-x_0)}}\cdot e^{i(kx-wt+\theta_0)}$$  
+$$\text{where}\ k,\ w,\ x_0,\ \theta_0\ \text{changeable, while other parameters are found using following expressions:}$$  
 
-$$\text{where}\ k,\ w,\ x_0,\ \theta_0\ \text{are changeable parameters}$$  
+$$\mu = 4(k^2 - w),\quad \nu = \frac{4}{3}\alpha$$  
 
 ### 6th order  
 equation:  
