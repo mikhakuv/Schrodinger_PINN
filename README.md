@@ -1,4 +1,5 @@
-This tool is designed to solve one-dimensional Schrödinger equations using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature). Illustrational usage examples can be found at [the folder](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples)
+This tool is designed to solve one-dimensional Schrödinger equations using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature).  
+Illustrational usage examples can be found at [the folder](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples).
 
 ## Improvements
 Although the basic approach remains same, many improvements are available:  
