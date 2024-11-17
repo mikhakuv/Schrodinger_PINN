@@ -61,9 +61,9 @@ class PINN():
         #loss balancing options
         self.loss_bal_method = "none" #"none"/relobralo"
         self.bal_freq = 1 #loss rebalancing frequency
-        self.lambda_i = 950/1000 #10/12
-        self.lambda_b = 49/1000 #1/12
-        self.lambda_f = 1/1000 #1/12
+        self.lambda_i = 950/1000 #loss weights
+        self.lambda_b = 49/1000
+        self.lambda_f = 1/1000
         self.extinction = 0.9 #extinction coefficient for ReLoBRaLo
         #causal training
         self.causal_loss = False
@@ -121,7 +121,10 @@ class PINN():
             cg_tol=1e-5,
             cg_max_iters=100,
             line_search_fn='armijo')
-        
+
+        self.initial_lambda_i = self.lambda_i
+        self.initial_lambda_b = self.lambda_b
+        self.initial_lambda_f = self.lambda_f
         self.nncg_active = False
         self.first_nncg_iter = False
         self.grad_tuple = None
@@ -320,9 +323,9 @@ class PINN():
             self.frames=[]
             shutil.rmtree('./frames')
         self.train_finished = True
-        self.lambda_i = 10/12
-        self.lambda_b = 1/12
-        self.lambda_f = 1/12
+        self.lambda_i = self.initial_lambda_i
+        self.lambda_b = self.initial_lambda_b
+        self.lambda_f = self.initial_lambda_f
 
     def predict(self, X):
         x = torch.tensor(X[:, 0:1], requires_grad=True).float().to(device)

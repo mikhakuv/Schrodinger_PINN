@@ -1,4 +1,3 @@
-# Функции для расчёта метрик и визуализации результатов предсказания моделей
 import numpy as np
 import pandas as pd
 import pathlib
@@ -22,15 +21,15 @@ def get_lw_errs(df_pred):
     i_inp_x = df_pred_t0["x"].values
 
     if "true_u" in df_pred.columns and "true_v" in df_pred.columns:
-        # Вариант, когда известно точное решение и оно есть в df_pred, колонки true_u, true_v
+        # if analytical solution appears in df_pred in columns true_u, true_v
         i_inp_u = df_pred_t0["true_u"].values
         i_inp_v = df_pred_t0["true_v"].values
     elif "ic_u" in df_pred.columns and "ic_v" in df_pred.columns:
-        # Вариант, когда известно только начальное условие
+        # if only initial condition appears in df_pred
         i_inp_u = df_pred_t0["ic_u"].values
         i_inp_v = df_pred_t0["ic_v"].values
     else:
-        raise Exception("В df_pred должны быть колонки true_u, true_v или ic_u, ic_v для расчёта I1, I2")
+        raise Exception("df_pred must contain columns true_u, true_v or ic_u, ic_v for I1, I2 calculation")
 
     I1_true, I2_true = compute_I1_I2(inp_x=i_inp_x, inp_u=i_inp_u, inp_v=i_inp_v)
     df_lw_errs = compute_lw_errs(df_pred, t0=t0, I1_true=I1_true, I2_true=I2_true)
@@ -40,25 +39,23 @@ def get_lw_errs(df_pred):
 
 def check_mesh(df_pred, diff_threshold=0.001):
     """
-    Функция проверяет, что x и t представлены в виде равномерной сетки
+    The function checks that x and t are represented as a uniform grid
     Parameters
     ----------
     df_pred: pd.DataFrame
-        Данные для анализа
+        data for analysis
 
     diff_threshold: float
-        Граница, что считать не равномерным.
-        В силу погрешности некоторые промежутки между элементами сетки могут быть чуть больше или меньше.
-        diff_threshold - задаёт допустимую разницу между промежутками в сетке  для x и t
+        the boundary of what to consider not uniform, specifies the allowable difference between grid spacing for x and t
 
     Returns
     -------
     is_mesh: bool
-        True - если x и t заданы равномерной сеткой
+        True if x and t are given by a uniform grid
     n_x: int
-        Число точек по x в одном срезе
+        number of points by x in one slice
     n_t: int
-        Число точек по t в одном срезе
+        number of points by t in one slice
     """
     is_mesh = True
 
@@ -67,7 +64,7 @@ def check_mesh(df_pred, diff_threshold=0.001):
     n_x = len(x_mesh)
     n_t = len(t_mesh)
 
-    # Проверка, что интервалы между значениями в сетке равномерные с погрешностью diff_threshold
+    # Check that the intervals between values in the grid are uniform with diff_threshold error
     dt1_t = t_mesh[1] - t_mesh[0]
     dt1_x = x_mesh[1] - x_mesh[0]
     for i in range(len(t_mesh) - 1):
@@ -87,12 +84,9 @@ def check_mesh(df_pred, diff_threshold=0.001):
     return is_mesh, n_x, n_t
 
 
-# Оценка по двум законам сохранения
-# производные для законов вычисляются численно с помоьщю фукции numpy gradint
+# Estimation of the two conservation laws
+# The derivatives for the laws are calculated numerically using the numpy gradint function
 def compute_I1_I2(inp_x, inp_u, inp_v):
-    """
-    Функция для численного расчёта констант I1, I2 по точкам
-    """
     mod_q2 = inp_u ** 2 + inp_v ** 2
     I1 = scipy.integrate.trapezoid(y=mod_q2, x=inp_x)
 
@@ -126,9 +120,7 @@ def compute_lw_errs(df_pred, t0=None, I1_true=None, I2_true=None):
     return df_laws_errors
 
 
-# Для оценки на известном точном решении
 def relative_l2_norm(u_true, u_pred):
-    """relative L2-norm из оригинального PINN"""
     res = np.linalg.norm(u_pred - u_true, 2) / np.linalg.norm(u_true, 2)
     return res
 
@@ -184,8 +176,8 @@ def vis_run(df_pred_all, df_laws_err, vis_relh=False, rcount=300, ccount=1000, d
     fig.tight_layout()
     return fig
 
+    
 def plot_errors(X, T, Q_calc, Q_truth, savefig=False, namefig="errors.png", savetable=False, nametable="data.csv"):
-    #сохраняем данные в таблицу поскольку именно такой формат принимают написанные здесь функции
     U_truth=np.real(Q_truth)
     V_truth=np.imag(Q_truth)
     Q_abs_truth=np.abs(Q_truth)
@@ -202,14 +194,13 @@ def plot_errors(X, T, Q_calc, Q_truth, savefig=False, namefig="errors.png", save
                      'pred_h': Q_abs_calc.flatten()})
     if savetable:
         df_pred.to_csv(nametable, index=False)
-    #применяем к таблице уже написанные функции
     df_pred = df_pred.groupby(["t", "x"]).agg("first")
     df_pred = df_pred.reset_index()
     is_mesh, n_x, n_t = check_mesh(df_pred)
     if not is_mesh:
         raise Exception("Use uniform mesh by x and t")
     print(f"Dimensionality by x: {n_x}, by t: {n_t}")
-    # Расчёт основных метрик
+    # Metrics evaluation
     df_laws_err = get_lw_errs(df_pred)
     d_scores = {"Lw1_per_max": df_laws_err["ErrLw1_per"].max(),
                 "Lw1_per_mean": df_laws_err["ErrLw1_per"].mean(),
@@ -217,13 +208,14 @@ def plot_errors(X, T, Q_calc, Q_truth, savefig=False, namefig="errors.png", save
                 "Lw2_per_mean": df_laws_err["ErrLw2_per"].mean(),
                 "Rel_h": relative_l2_norm(df_pred["true_h"].values, df_pred["pred_h"].values)}
 
-    # Визуализации 3d + тепловая карта + графики по законам
+    # 3d vizualization + heat map + charts with conservation laws
     fig = vis_run(df_pred_all=df_pred, df_laws_err=df_laws_err, vis_relh=True)
     if savefig:
         fig.savefig(namefig)
     fig.show()
     return d_scores
 
+    
 def plot_comparison(X, T, Q_calc, Q_truth, savefig=False, namefig="comparison.png"):
     fig, axs = plt.subplots(3, 3, figsize=(21,10), dpi=300)
     for ax in axs.flat:
