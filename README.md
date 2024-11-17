@@ -1,6 +1,17 @@
 This tool is designed to solve one-dimensional Schrödinger equations using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature).  
 Illustrational usage examples can be found at [the folder](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples).
 
+## Installation
+We recommend to create new Python environment for using `Schrodinger PINN`:  
+```bash
+conda create -p $HOME/environments/schrod_pinn python=3.9
+conda activate $HOME/environments/schrod_pinn
+git clone git@github.com:mikhakuv/Schrodinger_PINN.git
+pip install -e .
+python -m ipykernel install --user --name schrod_pinn --display-name "schrod_pinn kernel"
+```
+Next, choose kernel "schrod_pinn kernel" before running the notebooks.
+
 ## Improvements
 Although the basic approach remains same, many improvements are available:  
 ### Wise Points Generation  
