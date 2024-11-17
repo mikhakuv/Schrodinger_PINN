@@ -1,0 +1,31 @@
+[project]
+name = "schrodinger_pinn"
+version = "1.0"
+description = "PINN for solving Schrodinger equation"
+readme = "README.md"
+requires-python = "~=3.9"
+license = {file = "LICENSE"}
+authors = [{name="Mikhail Kuvakin"}]
+keywords = ["neural networks", "deep learning", "pinns", "schrodinger equation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Natural Language :: English",
+    "License :: OSI Approved :: LGPL-2.1 License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Intended Audience :: Science/Research",
+    "Development Status :: Beta",
+]
+dependencies = ["numpy==1.26.3", "scipy==1.13.1", "torch==2.0.0", "pandas==2.2.3", "matplotlib==3.9.2", "plotly==5.24.1", "PIL==10.2.0",
+"pydoe==0.3.8", "argparse>=1.1", "json>=2.0.9" "ray>=2.37.0", "optuna>=4.0.0", "ipython>=8.18.1", "ipykernel>=6.29.5"]
+
+[project.urls]
+"Homepage" = "https://github.com/mikhakuv/Schrodinger_PINN"
+"Bug Tracker" = "https://github.com/mikhakuv/Schrodinger_PINN/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = ["schrodinger_pinn/*"]
