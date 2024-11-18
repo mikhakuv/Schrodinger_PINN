@@ -1,5 +1,4 @@
 This tool is designed to solve one-dimensional Schrödinger equations using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature).  
-Illustrational usage examples can be found at [the folder](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples).
 
 ## Installation
 We recommend to create new Python environment for using `Schrodinger PINN`:  
@@ -10,10 +9,10 @@ git clone git@github.com:mikhakuv/Schrodinger_PINN.git
 pip install -e .
 python -m ipykernel install --user --name schrod_pinn --display-name "schrod_pinn kernel"
 ```
-Next, choose kernel "schrod_pinn kernel" before running the notebooks.
+Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrational usage examples can be found at [the folder](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples).
 
 ## Improvements
-Although the basic approach remains same, many improvements are available:  
+Although the basic approach remains same as described in [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature), many improvements are available:  
 ### Wise Points Generation  
 Points can be generated with respect to residual value: higher residual corresponds to higher probability of being included into next training set. There are 3 different formulas of probability $P(x)$ which implement this idea:  
 
