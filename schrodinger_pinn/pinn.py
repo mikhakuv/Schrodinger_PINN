@@ -281,9 +281,10 @@ class PINN():
             return loss
 
     def train(self):        
-        if self.make_res_gif and not os.path.exists('./frames'):
-            os.mkdir('./frames')
+        if self.make_res_gif:
             self.snap_freq=(self.adam_steps+self.lbfgs_steps+self.nncg_steps)//100
+            if not os.path.exists('./frames'):
+                os.mkdir('./frames')
         lbfgs_iterations=0
         nncg_iterations=0
         self.train_finished = False
