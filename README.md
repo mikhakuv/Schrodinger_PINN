@@ -1,4 +1,4 @@
-This tool is designed to solve one-dimensional Schrödinger equation using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature).  
+This tool is designed to solve one-dimensional Schrödinger equation using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature).  
 
 ## Installation
 We recommend to create new Python environment for using `Schrodinger PINN`:  
@@ -69,7 +69,7 @@ Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrat
     There are many other charts and statistics available, see [Plots and Statistics](https://github.com/mikhakuv/Schrodinger_PINN/tree/main?tab=readme-ov-file#plots-and-statistics).
 
 ## Improvements
-Although the basic approach remains same as described in [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature), many improvements are available:  
+Although the basic approach remains same as described in [[1]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature), many improvements are available:  
 ### Wise Points Generation  
 Points can be generated with respect to residual value: higher residual corresponds to higher probability of being included into next training set. There are 3 different formulas of probability $P(x)$ which implement this idea:  
 
@@ -87,13 +87,13 @@ $$\nu_2 = \frac{sum\\_abs(x) - min(sum\\_abs)}{max(sum\\_abs) - min(sum\\_abs)},
 
 $$\lambda_1\ \text{and}\ \lambda_2\ \text{are constants and automatically set up as}\ \lambda_1=0.005,\ \lambda_2 = 0.01$$  
 
-The idea was proposed in [[2]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature). To enable this option, set `PINN.points_gen_method` as `"first"`,`"second"` or `"third"` correspondingly. By default `PINN.points_gen_method = "random"`  
+The idea was proposed in [[2]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature). To enable this option, set `PINN.points_gen_method` as `"first"`,`"second"` or `"third"` correspondingly. By default `PINN.points_gen_method = "random"`  
 ### Causal Loss  
 By default, loss on equation is calculated as follows:  
 
 $$Loss_{eq} = \frac{1}{N_t}\sum_{k=1}^{N_t} Loss_{eq}(t_k),\ \text{where}\ Loss_{eq}(t_k)\ \text{is mean residual on points with}\ t=t_k$$  
 
-Causal loss employs differrent formula which represents the idea of causality in training suggested in [[3]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature):  
+Causal loss employs differrent formula which represents the idea of causality in training suggested in [[3]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature):  
 
 $$Loss_{eq} = \frac{1}{N_t\cdot\sum_{k=1}^{N_t}w_k}\sum_{k=1}^{N_t} Loss_{eq}(t_k)\cdot w_k$$  
 
@@ -106,7 +106,7 @@ Loss for PINN is defined as follows:
 
 $$Loss = \lambda_i\cdot Loss_{ic} + \lambda_b\cdot Loss_{bc} + \lambda_f\cdot Loss_{eq}$$  
 
-Without active loss balancing, $\lambda_i,\ \lambda_b, \lambda_f$ are constant values, set as `PINN.lambda_i=950/1000`, `PINN.lambda_b=49/1000`, `PINN.lambda_f=1/1000` by default. However, active loss balancing option is also available, namely ReloBRaLo method which is introduced in [[4]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature). It changes $\lambda_i,\ \lambda_b, \lambda_f$ dinamically according to the following formula:  
+Without active loss balancing, $\lambda_i,\ \lambda_b, \lambda_f$ are constant values, set as `PINN.lambda_i=950/1000`, `PINN.lambda_b=49/1000`, `PINN.lambda_f=1/1000` by default. However, active loss balancing option is also available, namely ReloBRaLo method which is introduced in [[4]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature). It changes $\lambda_i,\ \lambda_b, \lambda_f$ dinamically according to the following formula:  
 
 $$\lambda_n = \tau\cdot\left(\rho\cdot\lambda_n(iter-1) + (1-\rho)\cdot\widehat{\lambda_n}(iter)\right) + (1-\tau)\cdot\lambda_n(iter)$$  
 
@@ -116,7 +116,7 @@ $$\tau \in[0,1] - \text{extinction coefficient},\ \rho \in[0,1] - \text{random l
 
 Set `PINN.loss_bal_method="relobralo"` for using active loss balancing method. By default `PINN.loss_bal_method="none"`.
 ### Optimizers  
-Three optimizers are available: ADAM, LBFGS and NNCG (see [[5]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature) for details). Amount of steps by each can be set using `PINN.adam_steps`, `PINN.lbfgs_steps` and `PINN.nncg_steps`. Moreover, exponential step decay can be established by `PINN.adam_step_decay`, `PINN.lbfgs_step_decay` `PINN.nncg_step_decay` combined with `PINN.decay_freq` which defines frequency of decay.  
+Three optimizers are available: ADAM, LBFGS and NNCG (see [[5]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature) for details). Amount of steps by each can be set using `PINN.adam_steps`, `PINN.lbfgs_steps` and `PINN.nncg_steps`. Moreover, exponential step decay can be established by `PINN.adam_step_decay`, `PINN.lbfgs_step_decay` `PINN.nncg_step_decay` combined with `PINN.decay_freq` which defines frequency of decay.  
 
 ## Plots and Statistics
 ### Metrics
@@ -163,7 +163,7 @@ equation:
 
 $$iq_t + q_{xx} + q (|q|^2 + \alpha |q|^4 + \beta |q|^6) = 0$$  
 
-specific solution in case $\beta = 0$ is given in [[6]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature):  
+specific solution in case $\beta = 0$ is given in [[6]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature):  
 
 $$q(x,t)=\sqrt{\frac{4 \mu e^{\sqrt{\mu}(x-2k t - z_0)}}{1 + 4 e^{\sqrt{\mu}(x-2k t - z_0)} + (4 + 4 \mu \nu) e^{2\sqrt{\mu}(x-2k t - z_0)}}}\cdot e^{i(kx-wt+\theta_0)}$$  
 
@@ -176,7 +176,7 @@ equation:
 
 $$iq_t + ia_1q_x + a_2q_{xx} + ia_3q_{3x} + a_4q_{4x} + ia_5q_{5x} + a_6q_{6x} + q(b_1|q|^2 +b_2|q|^4 + b_3|q|^6)=0$$  
 
-specific solution is found in [[7]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature):  
+specific solution is found in [[7]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature):  
 
 $$q(x,t) = \frac{A_1}{a e^{(x-C_0 t + x_0)} + \frac{\chi}{4a}\cdot e^{-(x-C_0 t + x_0)}}\cdot e^{i(kx-wt+\theta_0)}$$
 
