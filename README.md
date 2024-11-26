@@ -1,4 +1,4 @@
-This tool is designed to solve one-dimensional Schrödinger equations using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature).  
+This tool is designed to solve one-dimensional Schrödinger equation using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature).  
 
 ## Installation
 We recommend to create new Python environment for using `Schrodinger PINN`:  
@@ -163,7 +163,7 @@ equation:
 
 $$iq_t + q_{xx} + q (|q|^2 + \alpha |q|^4 + \beta |q|^6) = 0$$  
 
-solution in case $\beta = 0$:  
+specific solution in case $\beta = 0$ is given in [[6]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature):  
 
 $$q(x,t)=\sqrt{\frac{4 \mu e^{\sqrt{\mu}(x-2k t - z_0)}}{1 + 4 e^{\sqrt{\mu}(x-2k t - z_0)} + (4 + 4 \mu \nu) e^{2\sqrt{\mu}(x-2k t - z_0)}}}\cdot e^{i(kx-wt+\theta_0)}$$  
 
@@ -176,7 +176,7 @@ equation:
 
 $$iq_t + ia_1q_x + a_2q_{xx} + ia_3q_{3x} + a_4q_{4x} + ia_5q_{5x} + a_6q_{6x} + q(b_1|q|^2 +b_2|q|^4 + b_3|q|^6)=0$$  
 
-solution:  
+specific solution is found in [[7]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature):  
 
 $$q(x,t) = \frac{A_1}{a e^{(x-C_0 t + x_0)} + \frac{\chi}{4a}\cdot e^{-(x-C_0 t + x_0)}}\cdot e^{i(kx-wt+\theta_0)}$$
 
@@ -204,3 +204,7 @@ $$b_2 = -(24 a_4*\chi^2 + 360 a_6 \chi^2) k^2 + 840 a_6 \frac{\chi^2}{A_1^4},\qu
 **[4]** *Rafael Bischof, Michael A. Kraus* Multi-Objective Loss Balancing for Physics-Informed Deep Learning, [https://arxiv.org/abs/2110.09813](https://arxiv.org/abs/2110.09813)  
 
 **[5]** *Pratik Rathore, Weimu Lei, Zachary Frangella, Lu Lu, Madeleine Udell* Challenges in Training PINNs: A Loss Landscape Perspective, [https://arxiv.org/abs/2402.01868](https://arxiv.org/abs/2402.01868)  
+
+**[6]** *V.A. Medvedev, N.A. Kudryashov* Numerical study of soliton solutions of the cubic-quintic-septic nonlinear Schrodinger equation, Vestnik MEPhI, 2024, vol. 13, no. 2, pp. 83–96
+
+**[7]** *N.A. Kudryashov* Method for finding highly dispersive optical solitons of nonlinear differential equations, Optik, Volume 206, 2020, 163550
