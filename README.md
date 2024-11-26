@@ -12,35 +12,62 @@ python -m ipykernel install --user --name schrod_pinn --display-name "schrod_pin
 Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrational usage examples can be found at [the folder](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples).
 
 ## Getting started
-1. Create your problem class or choose one from existing. Adjust parameters
-2. Generate set of training data using `make_points(problem, init_points_amt, bound_points_amt, grid_resolution_x, grid_resolution_t)`:
+1. Create custom problem class or choose one from existing, e.g.:
+   ```python
+    from problems import sixth_order
+    #domain settings
+    x_0=-10.
+    x_1=10.
+    t_0=0.
+    t_1=1.
+    #problem settings
+    a1 = 1
+    a2 = -1
+    a4 = -0.3
+    a6 = 0.1
+    b1 = 6
+    khi = 1
+    a_param = 0.5
+    x0_param = 4
+    theta0 = math.pi/3
+    problem = sixth_order(x_0, x_1, t_0, t_1, a1, a2, a4, a6, b1, khi, a_param, x0_param, theta0)
+   ```
+   For description of defined problems, see [Problems](https://github.com/mikhakuv/Schrodinger_PINN/edit/main/README.md#problems).
+3. Generate set of training data using `make_points`:
+   ```python
+   X_i, u, v, X_b, X_g = make_points(problem, init_points_amt=400, bound_points_amt=100, grid_resolution_x=200, grid_resolution_t=100)
+   ```
    * **problem** - problem under consideration
    * **init_points_amt** - amount of points on initial condition
    * **bound_points_amt** - resolution of points on boundary conditions
    * **grid_resolution_x** and **grid_resolution_t** - $x$ and $t$ resolutions of grid used for wise points generation
-3. Define model: `model = PINN(problem, layers, X_i, u, v, X_b, X_g)`:
+4. Define model:
+   ```python
+   model = PINN(problem, layers=[2,100,100,100,2], X_i, u, v, X_b, X_g)
+   ```
    * **problem** - problem class element as defined earlier
-   * **layers** - topology of the network. Since total amount of input dimensions is 2 ($x$, $t$) as well as total amount of output dimensions (real and imaginary parts), first and last layers must be 2, e.g. `[2,100,100,100,2]`
+   * **layers** - topology of the network. Since total amount of input dimensions is 2 ($x$, $t$) as well as total amount of output dimensions (real and imaginary parts), first and last numbers must be 2
    * **X_i**, **u**, **v**, **X_b** and **X_g** are train points and values generated before by using `make_points` function
-4. Configure the training process, simplest settings are listed bellow:  
+6. Configure the training process, simplest settings are listed bellow:  
    ```python
    model.verbosity = 1000 #frequency of loss output
    model.points_am = 5000  #amount of collocation points
    model.adam_steps = 10000  #amount of steps by primordial optimizator
    ```
    Additionally, there are many improvements available, for more information see [Improvements](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#improvements).
-5. Train:
+7. Train:
    ```python
    model.train
    ```
-6. Evaluate performance, e.g.:
+8. Evaluate performance, e.g.:
    ```python
    x=np.linspace(x_0,x_1,200)
    t=np.linspace(t_0,t_1,100)
    X, T = np.meshgrid(x, t)
    model.plot_residual(X, T)
    ```
-  There are many other charts and statistics available, see [Plots and Statistics](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#plots_and_statistics).
+    There are many other charts and statistics available, see [Plots and Statistics](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#plots-and-statistics).
+
 ## Improvements
 Although the basic approach remains same as described in [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature), many improvements are available:  
 ### Wise Points Generation  
