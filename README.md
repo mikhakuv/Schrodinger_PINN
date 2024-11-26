@@ -22,8 +22,25 @@ Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrat
    * **problem** - problem class element as defined earlier
    * **layers** - topology of the network. Since total amount of input dimensions is 2 ($x$, $t$) as well as total amount of output dimensions (real and imaginary parts), first and last layers must be 2, e.g. `[2,100,100,100,2]`
    * **X_i**, **u**, **v**, **X_b** and **X_g** are train points and values generated before by using `make_points` function
-4. 
-
+4. Configure the training process, simplest settings are listed bellow:  
+   ```python
+   model.verbosity = 1000 #frequency of loss output
+   model.points_am = 5000  #amount of collocation points
+   model.adam_steps = 10000  #amount of steps by primordial optimizator
+   ```
+   Additionally, there are many improvements available, for more information see [Improvements](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#improvements).
+5. Train:
+   ```python
+   model.train
+   ```
+6. Evaluate performance, e.g.:
+   ```python
+   x=np.linspace(x_0,x_1,200)
+   t=np.linspace(t_0,t_1,100)
+   X, T = np.meshgrid(x, t)
+   model.plot_residual(X, T)
+   ```
+  There are many other charts and statistics available, see [Plots and Statistics](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#plots_and_statistics).
 ## Improvements
 Although the basic approach remains same as described in [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature), many improvements are available:  
 ### Wise Points Generation  
