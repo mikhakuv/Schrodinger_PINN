@@ -32,7 +32,7 @@ Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrat
     theta0 = math.pi/3
     problem = sixth_order(x_0, x_1, t_0, t_1, a1, a2, a4, a6, b1, khi, a_param, x0_param, theta0)
    ```
-   For description of defined problems, see [Problems](https://github.com/mikhakuv/Schrodinger_PINN/edit/main/README.md#problems).
+   For description of defined problems, see [Problems](https://github.com/mikhakuv/Schrodinger_PINN/tree/main?tab=readme-ov-file#problems).
 3. Generate set of training data using `make_points`:
    ```python
    X_i, u, v, X_b, X_g = make_points(problem, init_points_amt=400, bound_points_amt=100, grid_resolution_x=200, grid_resolution_t=100)
@@ -54,7 +54,7 @@ Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrat
    model.points_am = 5000  #amount of collocation points
    model.adam_steps = 10000  #amount of steps by primordial optimizator
    ```
-   Additionally, there are many improvements available, for more information see [Improvements](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#improvements).
+   Additionally, there are many improvements available, for more information see [Improvements](https://github.com/mikhakuv/Schrodinger_PINN/tree/main?tab=readme-ov-file#improvements).
 7. Train:
    ```python
    model.train
@@ -66,7 +66,7 @@ Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrat
    X, T = np.meshgrid(x, t)
    model.plot_residual(X, T)
    ```
-    There are many other charts and statistics available, see [Plots and Statistics](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#plots-and-statistics).
+    There are many other charts and statistics available, see [Plots and Statistics](https://github.com/mikhakuv/Schrodinger_PINN/tree/main?tab=readme-ov-file#plots-and-statistics).
 
 ## Improvements
 Although the basic approach remains same as described in [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature), many improvements are available:  
