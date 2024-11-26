@@ -11,6 +11,19 @@ python -m ipykernel install --user --name schrod_pinn --display-name "schrod_pin
 ```
 Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrational usage examples can be found at [the folder](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples).
 
+## Getting started
+1. Create your problem class or choose one from existing. Adjust parameters
+2. Generate set of training data using `make_points(problem, init_points_amt, bound_points_amt, grid_resolution_x, grid_resolution_t)`:
+   * **problem** - problem under consideration
+   * **init_points_amt** - amount of points on initial condition
+   * **bound_points_amt** - resolution of points on boundary conditions
+   * **grid_resolution_x** and **grid_resolution_t** - $x$ and $t$ resolutions of grid used for wise points generation
+3. Define model: `model = PINN(problem, layers, X_i, u, v, X_b, X_g)`:
+   * **problem** - problem class element as defined earlier
+   * **layers** - topology of the network. Since total amount of input dimensions is 2 ($x$, $t$) as well as total amount of output dimensions (real and imaginary parts), first and last layers must be 2, e.g. `[2,100,100,100,2]`
+   * **X_i**, **u**, **v**, **X_b** and **X_g** are train points and values generated before by using `make_points` function
+4. 
+
 ## Improvements
 Although the basic approach remains same as described in [[1]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature), many improvements are available:  
 ### Wise Points Generation  
@@ -42,15 +55,14 @@ $$Loss_{eq} = \frac{1}{N_t\cdot\sum_{k=1}^{N_t}w_k}\sum_{k=1}^{N_t} Loss_{eq}(t_
 
 $$\text{where}\ w_k = exp\left(-\varepsilon\cdot\sum_{i=1}^{k-1}Loss_{eq}(t_k)\right)\ \text{and}\ \varepsilon\ \text{is changeable parameter}$$  
 
-Causality means that if $Loss_{eq}(t)$ is high for $t<\tilde{t}$, then PINN will not be training on $t>\tilde{t}$ until $Loss_{eq}(t)$ for $t<\tilde{t}$ gets lower.  
-To enable this option, set `PINN.causal_loss = True` and adjust `PINN.epsilon`.  
+Causality means that if $Loss_{eq}(t)$ is high for $t<\tilde{t}$, then PINN will not be training on $t>\tilde{t}$ until $Loss_{eq}(t)$ for $t<\tilde{t}$ gets lower. To enable this option, set `PINN.causal_loss = True` and adjust `PINN.epsilon`.  
 
 ### Loss Balancing  
 Loss for PINN is defined as follows:  
 
 $$Loss = \lambda_i\cdot Loss_{ic} + \lambda_b\cdot Loss_{bc} + \lambda_f\cdot Loss_{eq}$$  
 
-Without active loss balancing, $\lambda_i,\ \lambda_b, \lambda_f$ are constant values, set as `PINN.lambda_i=10/12`, `PINN.lambda_b=1/12`, `PINN.lambda_f=1/12` by default. However, active loss balancing option is also available, namely ReloBRaLo method which is introduced in [[4]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature). It changes $\lambda_i,\ \lambda_b, \lambda_f$ dinamically according to the following formula:  
+Without active loss balancing, $\lambda_i,\ \lambda_b, \lambda_f$ are constant values, set as `PINN.lambda_i=950/1000`, `PINN.lambda_b=49/1000`, `PINN.lambda_f=1/1000` by default. However, active loss balancing option is also available, namely ReloBRaLo method which is introduced in [[4]](https://github.com/mikhakuv/Schrodinger_PINN/blob/main/README.md#literature). It changes $\lambda_i,\ \lambda_b, \lambda_f$ dinamically according to the following formula:  
 
 $$\lambda_n = \tau\cdot\left(\rho\cdot\lambda_n(iter-1) + (1-\rho)\cdot\widehat{\lambda_n}(iter)\right) + (1-\tau)\cdot\lambda_n(iter)$$  
 
@@ -68,15 +80,17 @@ For accuracy evaluation following metrics are used:
 
 $$Rel_h= \frac{\sqrt{\sum_{n=1}^{N} (|\hat{q_{n}}| - |q_{n}|)^2}}{\sqrt{\sum_{i=1}^{N} (q_{i})^2}}$$  
 
-$$max(Lw_1) = \max_{i \in T} \left ( \frac{|I_1 - \hat{I}_1(t_i)|}{I_1} \right ) \cdot 100\\%$$  
+$$max(Lw_1) = \max_{i \in T} \left ( \frac{|I_1(t_0) - \hat{I}_1(t_i)|}{I_1(t_0)} \right ) \cdot 100\\%$$  
 
-$$mean(Lw_1) = \text{mean}_{i \in T} \left ( \frac{|I_1 - \hat{I}_1(t_i)|}{I_1} \right ) \cdot 100\\%$$  
+$$mean(Lw_1) = \text{mean}_{i \in T} \left ( \frac{|I_1(t_0) - \hat{I}_1(t_i)|}{I_1(t_0)} \right ) \cdot 100\\%$$  
 
-$$max(Lw_2) = \max_{i \in T} \left (\frac{|I_2 - \hat{I}_2(t_i)|}{I_2} \right ) \cdot 100\\%$$  
+$$max(Lw_2) = \max_{i \in T} \left (\frac{|I_2(t_0) - \hat{I}_2(t_i)|}{I_2(t_0)} \right ) \cdot 100\\%$$  
 
-$$mean(Lw_2) = \text{mean}_{i \in T} \left (\frac{|I_2 - \hat{I}_2(t_i)|}{I_2} \right ) \cdot 100\\%$$  
+$$mean(Lw_2) = \text{mean}_{i \in T} \left (\frac{|I_2(t_0) - \hat{I}_2(t_i)|}{I_2(t_0)} \right ) \cdot 100\\%$$  
 
-$$\text{where hatted values are predicted values and unhatted values are ground truth}$$  
+$$\text{where}\ I_1(t) = \int_{-\infty}^{+\infty} |q(x,t)|^2 dx;\quad I_2(t) = \int_{-\infty}^{+\infty} (q^{\ast} q_x - q^{\ast}_x q) dx$$
+
+$$\text{and hatted values are predicted values while unhatted values are ground truth}$$  
 
 Plenty visualizing options are available:  
 ### Training History
