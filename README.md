@@ -1,4 +1,5 @@
 This tool is designed to solve one-dimensional Schrödinger equation using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature).  
+> UPDATE: New tools are implemented. It is now possible to utilize SP_PINN, a network that features a new architecture. SP_PINN represents separate neural networks for each of the coordinates, and its output is calculated as a scalar product of the outputs of individual networks (the idea is very similar to the Separable PINN, proposed at [[8]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature)). Additionally, Seg_PINN is also implemented. This segmentation model divides the region into segments and sequentially trains a different PINN on each segment, the resulting solutions are then merged using one global PINN. Examples are available for further study: [SP_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/SP_PINN.ipynb), [Seg_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/Seg_PINN.ipynb).
 
 ## Installation
 We recommend to create new Python environment for using `Schrodinger PINN`:  
@@ -208,3 +209,5 @@ $$b_2 = -(24 a_4*\chi^2 + 360 a_6 \chi^2) k^2 + 840 a_6 \frac{\chi^2}{A_1^4},\qu
 **[6]** *V.A. Medvedev, N.A. Kudryashov* Numerical study of soliton solutions of the cubic-quintic-septic nonlinear Schrodinger equation, Vestnik MEPhI, 2024, vol. 13, no. 2, pp. 83–96
 
 **[7]** *N.A. Kudryashov* Method for finding highly dispersive optical solitons of nonlinear differential equations, Optik, Volume 206, 2020, 163550
+
+**[8]** *Junwoo Cho, Seungtae Nam, Hyunmo Yang, Seok-Bae Yun, Youngjoon Hong, Eunbyung Park* Separable Physics-Informed Neural Networks, Advances in Neural Information Processing Systems, 2023
