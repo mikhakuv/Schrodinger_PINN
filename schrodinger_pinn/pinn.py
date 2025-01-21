@@ -8,6 +8,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 from nys_newton_cg import NysNewtonCG
 from collections import OrderedDict
 from pyDOE import lhs
+from datetime import datetime
 
 if torch.cuda.is_available():
     device = torch.device('cuda')
@@ -35,12 +36,49 @@ class DNN(torch.nn.Module):
         layer_list.append(('layer_%d' % (self.depth - 1), torch.nn.Linear(layers[-2], layers[-1])))
         layerDict = OrderedDict(layer_list)
 
-        # deploy layers
         self.layers = torch.nn.Sequential(layerDict)
     def forward(self, x):
         out = self.layers(x)
         return out
 
+class SP_DNN(torch.nn.Module):
+    def __init__(self, x_layers, t_layers):
+        super(SP_DNN, self).__init__()
+
+        self.x_depth = len(x_layers) - 1
+        self.t_depth = len(t_layers) - 1
+        self.activation = SinActivation
+
+        if x_layers[-1]!=t_layers[-1]:
+            raise Exception(f'Output dimensions are not equal: {x_layers[-1]}!={t_layers[-1]}')
+        if x_layers[-1]%2!=0:
+            raise Exception(f'Output dimensions must be even: {x_layers[-1]}%2!=0')
+        
+        #neural network for x coordinate
+        x_layer_list = list()
+        for i in range(self.x_depth - 1):
+            x_layer_list.append(('layer_%d' % i, torch.nn.Linear(x_layers[i], x_layers[i+1])))
+            x_layer_list.append(('activation_%d' % i, self.activation()))
+        x_layer_list.append(('layer_%d' % (self.x_depth - 1), torch.nn.Linear(x_layers[-2], x_layers[-1])))
+        x_layerDict = OrderedDict(x_layer_list)
+        self.x_layers = torch.nn.Sequential(x_layerDict)
+
+        #neural network for t coordinate
+        t_layer_list = list()
+        for i in range(self.t_depth - 1):
+            t_layer_list.append(('layer_%d' % i, torch.nn.Linear(t_layers[i], t_layers[i+1])))
+            t_layer_list.append(('activation_%d' % i, self.activation()))
+        t_layer_list.append(('layer_%d' % (self.t_depth - 1), torch.nn.Linear(t_layers[-2], t_layers[-1])))
+        t_layerDict = OrderedDict(t_layer_list)
+        self.t_layers = torch.nn.Sequential(t_layerDict)
+        
+    def forward(self, x):
+        net_x_out = self.x_layers(x[:,0:1])
+        net_t_out = self.t_layers(x[:,1:2])
+        out = torch.stack([torch.diag(torch.matmul(net_x_out[:,0::2],net_t_out[:,0::2].T)), torch.diag(torch.matmul(net_x_out[:,1::2],net_t_out[:,1::2].T))]).T
+        return out
+
+#Primordial PINN scheme
 class PINN():
     def __init__(self, problem, layers, X_i, u, v, X_b, X_g):
         #verbosity
@@ -280,7 +318,7 @@ class PINN():
             loss.backward(retain_graph=True)
             return loss
 
-    def train(self):        
+    def train(self):
         if self.make_res_gif:
             self.snap_freq=(self.adam_steps+self.lbfgs_steps+self.nncg_steps)//100
             if not os.path.exists('./frames'):
@@ -362,7 +400,36 @@ class PINN():
         ax.axis([T.min(), T.max(), X.min(), X.max()])
         fig.colorbar(c, ax=ax)
         return plt.show()
-        
+
+    def set_params_as(self, another_PINN): #sets same hyperparameters as in another_PINN (this method is used in Seg_PINN)
+        #verbosity
+        self.verbosity = another_PINN.verbosity
+        self.make_res_gif = another_PINN.make_res_gif
+        #points generation options
+        self.points_gen_method = another_PINN.points_gen_method
+        self.points_gen_freq = another_PINN.points_gen_freq
+        self.points_am = another_PINN.points_am
+        #optimization options
+        self.adam_steps = another_PINN.adam_steps
+        self.lbfgs_steps = another_PINN.lbfgs_steps
+        self.nncg_steps = another_PINN.nncg_steps
+        self.adam_step_decay = another_PINN.adam_step_decay
+        self.lbfgs_step_decay = another_PINN.lbfgs_step_decay
+        self.nncg_step_decay = another_PINN.nncg_step_decay
+        self.decay_freq = another_PINN.decay_freq
+        #loss balancing options
+        self.loss_bal_method = another_PINN.loss_bal_method
+        self.bal_freq = another_PINN.bal_freq
+        self.lambda_i = another_PINN.lambda_i
+        self.lambda_b = another_PINN.lambda_b
+        self.lambda_f = another_PINN.lambda_f
+        self.extinction = another_PINN.extinction
+        #causal training
+        self.causal_loss = another_PINN.causal_loss
+        self.epsilon = another_PINN.epsilon
+        self.t_partition = another_PINN.t_partition
+        return 0
+    
     def clear(self): #clears all weights and history, but retains hyperparameters (this method is used in params tuning)
         self.dnn = DNN(self.layers).to(device)
         self.nncg_active = False
@@ -395,6 +462,223 @@ class PINN():
         self.lbfgs = torch.optim.LBFGS(self.dnn.parameters(),lr=1.0,max_iter=50000,max_eval=50000,history_size=50,tolerance_grad=1e-5,tolerance_change=1.0 * np.finfo(float).eps,line_search_fn="strong_wolfe")
         self.nncg = NysNewtonCG(self.dnn.parameters(),lr=0.005,rank=10,mu=1e-4,cg_tol=1e-5,cg_max_iters=100,line_search_fn='armijo')
         return 0
+
+#Scalar Product PINN: output is a scalar product of vector outputs of separate NNs for x and t coordinates
+class SP_PINN(PINN):
+    def __init__(self, problem, x_layers, t_layers, X_i, u, v, X_b, X_g):
+        #verbosity
+        self.verbosity = 100 #loss output frequency
+        self.make_res_gif = False #makes gif with residual history
+        #points generation options
+        self.points_gen_method = "random" #"random"/first"/"second"/"third"
+        self.points_gen_freq = 10 #points generation frequency
+        self.points_am = 5000 #amount of collocation points
+        #optimization options
+        self.adam_steps = 1000
+        self.lbfgs_steps = 10
+        self.nncg_steps = 0
+        self.adam_step_decay = 0.997
+        self.lbfgs_step_decay = 0.990
+        self.nncg_step_decay = 0.990
+        self.decay_freq = 100
+        #loss balancing options
+        self.loss_bal_method = "none" #"none"/relobralo"
+        self.bal_freq = 1 #loss rebalancing frequency
+        self.lambda_i = 950/1000 #loss weights
+        self.lambda_b = 49/1000
+        self.lambda_f = 1/1000
+        self.extinction = 0.9 #extinction coefficient for ReLoBRaLo
+        #causal training
+        self.causal_loss = False
+        self.epsilon = 0.1
+        self.t_partition = 30 #number of parts in the [t_0, t_1] division
+        
+        self.llc = np.array([problem.x_0, problem.t_0]) #left lower corner of domain
+        self.ruc = np.array([problem.x_1, problem.t_1]) #right upper corner of domain
+        self.x_i = torch.tensor(X_i[:, 0:1], requires_grad=True).float().to(device) #initial conditions: (x_i, t_i, u, v)
+        self.t_i = torch.tensor(X_i[:, 1:2], requires_grad=True).float().to(device)
+        self.u = torch.tensor(u).float().to(device)
+        self.v = torch.tensor(v).float().to(device)
+        self.x_b = torch.tensor(X_b[:, 0:1], requires_grad=True).float().to(device) #boundary conditions: (x_b, t_b, 0, 0)
+        self.t_b = torch.tensor(X_b[:, 1:2], requires_grad=True).float().to(device)
+        #if self.points_gen_method != "random" or self.make_res_gif: #grid of values for wise point generation or chart generation
+        self.x_grid = torch.tensor(X_g[:,:,0].flatten()[:,np.newaxis], requires_grad=True).float().to(device)
+        self.t_grid = torch.tensor(X_g[:,:,1].flatten()[:,np.newaxis], requires_grad=True).float().to(device)
+        self.grid_shapes = X_g.shape
+        self.x_f = torch.tensor((self.llc + (self.ruc-self.llc)*lhs(2, self.points_am))[:, 0:1], requires_grad=True).float().to(device) #initial collocation points
+        self.t_f = torch.tensor((self.llc + (self.ruc-self.llc)*lhs(2, self.points_am))[:, 1:2], requires_grad=True).float().to(device)
+        
+        self.frames=[]
+        
+        self.x_layers = x_layers
+        self.t_layers = t_layers
+        self.dnn = SP_DNN(x_layers, t_layers).to(device)
+
+        self.calc_res = problem.calc_res
+
+        # optimizers
+        self.adam = torch.optim.Adam(
+          self.dnn.parameters(),
+          lr=0.01,
+          betas=(0.9, 0.999),
+          eps=1e-08,
+          weight_decay=0,
+          amsgrad=False)
+        
+        self.lbfgs = torch.optim.LBFGS(
+            self.dnn.parameters(),
+            lr=1.0,
+            max_iter=50000,
+            max_eval=50000,
+            history_size=50,
+            tolerance_grad=1e-5,
+            tolerance_change=1.0 * np.finfo(float).eps,
+            line_search_fn="strong_wolfe")
+        
+        self.nncg = NysNewtonCG(
+            self.dnn.parameters(),
+            lr=0.005,
+            rank=10,
+            mu=1e-4,
+            cg_tol=1e-5,
+            cg_max_iters=100,
+            line_search_fn='armijo')
+
+        self.initial_lambda_i = self.lambda_i
+        self.initial_lambda_b = self.lambda_b
+        self.initial_lambda_f = self.lambda_f
+        self.nncg_active = False
+        self.first_nncg_iter = False
+        self.grad_tuple = None
+        self.train_finished = False
+        self.iter = 0
+        self.loss_hist = []
+        self.iter_hist = []
+        
+        #if self.loss_bal_method == "relobralo": # initial values for relobralo method
+        u_init, v_init = self.net_uv(self.x_i, self.t_i)
+        u_bound, v_bound = self.net_uv(self.x_b, self.t_b)
+        f_u_pred, f_v_pred = self.net_f(self.x_f, self.t_f)
+        #initial condition:
+        self.L_in = torch.mean(((self.u - u_init)**2 + (self.v - v_init)**2)/2).item()
+        #boundary conditions:
+        u_x = torch.autograd.grad(u_bound,self.x_b,grad_outputs=torch.ones_like(u_bound),retain_graph=True,create_graph=True)[0]
+        u_xx = torch.autograd.grad(u_x,self.x_b,grad_outputs=torch.ones_like(u_x),retain_graph=True,create_graph=True)[0]
+        v_x = torch.autograd.grad(v_bound,self.x_b,grad_outputs=torch.ones_like(v_bound),retain_graph=True,create_graph=True)[0]
+        v_xx = torch.autograd.grad(v_x,self.x_b,grad_outputs=torch.ones_like(v_x),retain_graph=True,create_graph=True)[0]
+        self.L_b = torch.mean((u_bound**2 + u_x**2 + u_xx**2 + v_bound**2 + v_x**2 + v_xx**2)/6).item()
+        #equation condition:
+        self.L_f = torch.mean((f_u_pred**2 + f_v_pred**2)/2).item()
+        self.L_in_0 = self.L_in
+        self.L_b_0 = self.L_b
+        self.L_f_0 = self.L_f
+
+#Segmentation PINN: the solution is found by sequence of PINNs on corresponding consecutive (by t) areas
+class Seg_PINN():
+    def __init__(self, problem, seg_amt, layers, init_points_amt, bound_points_amt, grid_resolution_x, grid_resolution_t):
+        #basic parameters
+        self.problem = problem
+        self.seg_amt = seg_amt #amount of segments
+        #PINN_i parameters
+        self.layers = layers #topology of each PINN_i
+        self.reuse_weights = False #use weights from PINN_i for PINN_i+1
+        self.init_points_amt = init_points_amt #amount of points on initial condition
+        self.bound_points_amt = bound_points_amt #amount of points on boundary condition
+        self.grid_resolution_x = grid_resolution_x #resolution of collocation points
+        self.grid_resolution_t = grid_resolution_t
+        #merge PINN parameters
+        self.merge_layers = [2, 100, 100, 100, 2] #layers of merge_PINN
+        self.merge_verbosity = 100 #loss output frequency of merge_PINN
+        self.appr_points_am = 15000 #amount of approximation points for merge_PINN training
+        self.merge_steps = 3000
+        #define segmentation bounds and create PINN for the first segment
+        self.seg_bounds = np.linspace(problem.t_0, problem.t_1, seg_amt+1)
+        self.problem.t_0 = self.seg_bounds[0]
+        self.problem.t_1 = self.seg_bounds[1]
+        X_i, U_i, V_i, X_b, X_g = make_points(self.problem, init_points_amt, bound_points_amt, grid_resolution_x, grid_resolution_t)
+        self.PINN = PINN(self.problem, self.layers, X_i, U_i, V_i, X_b, X_g)
+        self.merge_PINN = None
+        self.curr_date = datetime.now().strftime("%Y-%m-%d(%H:%M:%S)")
+        
+    def train(self):
+        #create dir for models
+        try:
+            os.mkdir(f"models_{self.curr_date}")
+        except FileExistsError:
+            pass
+        for segment_number in range(0, self.seg_amt):
+            print(f"Training on segment {segment_number+1}/{self.seg_amt}:")
+            if segment_number>=1 and self.reuse_weights:
+                prev_model = torch.load(f'./models_{self.curr_date}/model_{segment_number-1}.pth', map_location=device, weights_only=False)
+                self.PINN.dnn.load_state_dict(prev_model.dnn.state_dict())
+            self.PINN.train()
+            torch.save(self.PINN, f'./models_{self.curr_date}/model_{segment_number}.pth')
+            print(30*"-")
+            if segment_number != self.seg_amt-1: #prepare model for the next segment
+                self.problem.t_0 = self.seg_bounds[segment_number+1]
+                self.problem.t_1 = self.seg_bounds[segment_number+2]
+                X_i, U_i, V_i, X_b, X_g = make_points(self.problem, self.init_points_amt, self.bound_points_amt, self.grid_resolution_x, self.grid_resolution_t)
+                U_i, V_i, _, _ = self.PINN.predict(X_i) #output of the current model is ic for the next one
+                new_PINN = PINN(self.problem, self.layers, X_i, U_i, V_i, X_b, X_g)
+                new_PINN.set_params_as(self.PINN) #copy params of the current model
+                self.PINN = new_PINN
+        print("Training PINNs on segments is finished")
+        #merge_PINN will unify all obtained solutions, approximating them
+        self.problem.t_0 = self.seg_bounds[0]
+        self.problem.t_1 = self.seg_bounds[-1] #set problem params to the initial state
+        self.merge_PINN = self.train_merge_PINN()
+        print("The whole training process is finished!")
+        return 0
+
+    def train_merge_PINN(self):
+        print("Starting merge_PINN training:")
+        #obtain outputs of all trained models
+        XT_merge_list = []
+        U_merge_list = []
+        V_merge_list = []
+        for model_number in range(0, self.seg_amt):
+            model = torch.load(f'./models_{self.curr_date}/model_{model_number}.pth', map_location=device, weights_only=False)
+            x=np.linspace(self.problem.x_0,self.problem.x_1,self.grid_resolution_x)
+            t=np.linspace(self.seg_bounds[model_number],self.seg_bounds[model_number+1],self.grid_resolution_t)
+            X, T = np.meshgrid(x, t)
+            XT = np.hstack((X.flatten()[:,None], T.flatten()[:,None]))
+            U, V, _, _ = model.predict(XT)
+            XT_merge_list.append(XT)
+            U_merge_list.append(U)
+            V_merge_list.append(V)
+        XT_merge = np.concatenate(XT_merge_list)
+        U_merge = np.concatenate(U_merge_list)
+        V_merge = np.concatenate(V_merge_list)
+        inds = np.random.choice(XT_merge.shape[0], self.appr_points_am, replace=False)
+        XT_merge = XT_merge[inds,:]
+        U_merge = U_merge[inds,:]
+        V_merge = V_merge[inds,:]
+        #merge PINN is like usual PINN, but it is more about approximation of obtained solutions
+        _, _, _, X_b_train, X_grid = make_points(self.problem, self.init_points_amt, self.bound_points_amt, self.grid_resolution_x, self.grid_resolution_t)
+        merge_PINN = PINN(self.problem, self.merge_layers, XT_merge, U_merge, V_merge, X_b_train, X_grid)
+        merge_PINN.verbosity = self.merge_verbosity
+        merge_PINN.adam_steps = self.merge_steps
+        merge_PINN.lbfgs_steps = 0
+        merge_PINN.nncg_steps = 0
+        merge_PINN.train()
+        return merge_PINN
+    
+    def predict(self, X):
+        return self.merge_PINN.predict(X)
+
+    def train_hist(self, logscale=True, step=1):
+        colors = ['red','green','blue','orange','purple','grey','yellow','brown','limegreen','skyblue','olive','cyan','orchid','lightcoral','orangered']
+        for model_number in range(0, self.seg_amt):
+            model = torch.load(f'./models_{self.curr_date}/model_{model_number}.pth', map_location=device, weights_only=False)
+            plt.plot(np.array(model.iter_hist)[::step], np.array(model.loss_hist)[::step], color = colors[model_number], label=f'PINN_{model_number+1}')
+        if logscale:
+            plt.yscale("log")
+        plt.title('Loss(iter)')
+        plt.legend()
+        return plt.show()
+
+    def plot_residual(self, X, T):
+        return self.merge_PINN.plot_residual(X, T)
 
 def make_points(problem, init_points_amt, bound_points_amt, grid_resolution_x, grid_resolution_t):
     x_0, x_1 = problem.x_0, problem.x_1
