@@ -1,5 +1,5 @@
 This tool is designed to solve one-dimensional Schrödinger equation using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature).  
-> UPDATE: New tools are implemented. It is now possible to utilize SP_PINN, a network that features a new architecture. SP_PINN represents separate neural networks for each of the coordinates, and its output is calculated as a scalar product of the outputs of individual networks (the idea is very similar to the Separable PINN, proposed at [[8]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature)). Additionally, Seg_PINN is also implemented. This segmentation model divides the region into segments and sequentially trains a different PINN on each segment, the resulting solutions are then merged using one global PINN. Examples are available for further study: [SP_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/SP_PINN.ipynb), [Seg_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/Seg_PINN.ipynb).
+> UPDATE: New tools are implemented. It is now possible to utilize SP_PINN, a network that features a new architecture. SP_PINN represents separate neural networks for each of the coordinates, and its output is calculated as a scalar product of the outputs of individual networks (the idea is very similar to the Separable PINN, proposed at [[9]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature)). Additionally, Seg_PINN is also implemented. This segmentation model divides the region into segments and sequentially trains a different PINN on each segment, the resulting solutions are then merged using one global PINN. Examples are available for further study: [SP_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/SP_PINN.ipynb), [Seg_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/Seg_PINN.ipynb).
 
 ## Installation
 We recommend to create new Python environment for using `Schrodinger PINN`:  
@@ -16,12 +16,12 @@ Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrat
 1. Create custom problem class or choose one from existing, e.g.:
    ```python
     from problems import sixth_order
-    #domain settings
+    #domain setting
     x_0=-10.
     x_1=10.
     t_0=0.
     t_1=1.
-    #problem settings
+    #problem setting
     a1 = 1
     a2 = -1
     a4 = -0.3
@@ -58,7 +58,7 @@ Next, choose kernel "schrod_pinn kernel" before running the notebooks. Illustrat
    Additionally, there are many improvements available, for more information see [Improvements](https://github.com/mikhakuv/Schrodinger_PINN/tree/main?tab=readme-ov-file#improvements).
 7. Train:
    ```python
-   model.train
+   model.train()
    ```
 8. Evaluate performance, e.g.:
    ```python
@@ -100,7 +100,7 @@ $$Loss_{eq} = \frac{1}{N_t\cdot\sum_{k=1}^{N_t}w_k}\sum_{k=1}^{N_t} Loss_{eq}(t_
 
 $$\text{where}\ w_k = exp\left(-\varepsilon\cdot\sum_{i=1}^{k-1}Loss_{eq}(t_k)\right)\ \text{and}\ \varepsilon\ \text{is changeable parameter}$$  
 
-Causality means that if $Loss_{eq}(t)$ is high for $t<\tilde{t}$, then PINN will not be training on $t>\tilde{t}$ until $Loss_{eq}(t)$ for $t<\tilde{t}$ gets lower. To enable this option, set `PINN.causal_loss = True` and adjust `PINN.epsilon`.  
+Causality means that if $Loss_{eq}(t)$ is high for $t<\tilde{t}$, then PINN will not be training on $t>\tilde{t}$ until $Loss_{eq}(t)$ for $t<\tilde{t}$ gets lower. To enable this option, set `PINN.causal_loss = True` and adjust `PINN.epsilon`, `PINN.t_partition`.  
 
 ### Loss Balancing  
 Loss for PINN is defined as follows:  
@@ -121,7 +121,7 @@ Three optimizers are available: ADAM, LBFGS and NNCG (see [[5]](https://github.c
 
 ## Plots and Statistics
 ### Metrics
-For accuracy evaluation following metrics are used:  
+For accuracy evaluation, following metrics are used:  
 
 $$Rel_h= \frac{\sqrt{\sum_{n=1}^{N} (|\hat{q_{n}}| - |q_{n}|)^2}}{\sqrt{\sum_{i=1}^{N} (q_{i})^2}}$$  
 
@@ -144,7 +144,7 @@ Plenty visualizing options are available:
 <img src="https://github.com/mikhakuv/Schrodinger_PINN/blob/main/pictures/train_hist.png">  
 
 ### Residual of Solution
-`PINN.plot_residual(X=np.ndarray, T=np.ndarray))` plots residual of obtained solution:  
+`PINN.plot_residual(X=np.ndarray, T=np.ndarray)` plots residual of obtained solution:  
 
 <img src="https://github.com/mikhakuv/Schrodinger_PINN/blob/main/pictures/plot_residual.png">  
 
@@ -171,6 +171,29 @@ $$q(x,t)=\sqrt{\frac{4 \mu e^{\sqrt{\mu}(x-2k t - z_0)}}{1 + 4 e^{\sqrt{\mu}(x-2
 $$\text{where}\ k,\ w,\ x_0,\ \theta_0\ \text{changeable, while other parameters are found using following expressions:}$$  
 
 $$\mu = 4(k^2 - w),\quad \nu = \frac{4}{3}\alpha$$  
+
+### 4th order  
+equation:  
+
+$$iq_t + ia_1q_x + a_2q_{xx} + ia_3q_{3x} + a_4q_{4x} - q (b_1|q|^2 + b_2|q|^4 + b_3|q|^6 + b_4|q|^8) = 0 $$   
+
+specific solution is given in [[7]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature):  
+
+$$q(x,t)=\frac{\sqrt{2A\nu}}{\sqrt{-\mu + \sqrt{\mu^2 - 4\nu}\cosh{(2\sqrt{\nu}(x-vt-\tilde{x}_0))}}}\cdot e^{i(kx-wt+\theta_0)}$$  
+
+$$\text{where}\ a_1,\ a_2,\ a_4,\ A,\ k,\ \nu,\ \mu,\ \tilde{x}_0,\ \theta_0\ \text{changeable, while other parameters are found using following expressions:}$$  
+
+$$v = 8k^3a_4 + 2ka_2 + a_1$$  
+
+$$w = (3k^4 - 6\nu k^2 - \nu^2)a_4 + (k^2-\nu)a_2 + ka_1$$  
+
+$$a_3 = -4ka_4$$  
+
+$$b_1 = \frac{(12\mu k^2 + 20\mu\nu)a_4+2\mu a_2}{A}$$  
+
+$$b_2 = \frac{(18k^2 + 24\mu^2 + 78\nu)a_4+3 a_2}{A^2}$$  
+
+$$b_3 = \frac{120\mu a_4}{A^3},\quad b_4 = \frac{105a_4}{A^4}$$  
 
 ### 6th order  
 equation:  
@@ -208,6 +231,8 @@ $$b_2 = -(24 a_4*\chi^2 + 360 a_6 \chi^2) k^2 + 840 a_6 \frac{\chi^2}{A_1^4},\qu
 
 **[6]** *V.A. Medvedev, N.A. Kudryashov* Numerical study of soliton solutions of the cubic-quintic-septic nonlinear Schrodinger equation, Vestnik MEPhI, 2024, vol. 13, no. 2, pp. 83–96
 
-**[7]** *N.A. Kudryashov* Method for finding highly dispersive optical solitons of nonlinear differential equations, Optik, Volume 206, 2020, 163550
+**[7]** *A.A. Bayramukov, N.A. Kudryashov* Numerical study of the model described by the fourth order generalized nonlinear Schrödinger equation with cubic-quintic-septic-nonic nonlinearity, Journal of Computational and Applied Mathematics, Volume 437, 2024, 115497
 
-**[8]** *Junwoo Cho, Seungtae Nam, Hyunmo Yang, Seok-Bae Yun, Youngjoon Hong, Eunbyung Park* Separable Physics-Informed Neural Networks, Advances in Neural Information Processing Systems, 2023
+**[8]** *N.A. Kudryashov* Method for finding highly dispersive optical solitons of nonlinear differential equations, Optik, Volume 206, 2020, 163550
+
+**[9]** *Junwoo Cho, Seungtae Nam, Hyunmo Yang, Seok-Bae Yun, Youngjoon Hong, Eunbyung Park* Separable Physics-Informed Neural Networks, Advances in Neural Information Processing Systems, 2023
