@@ -245,4 +245,6 @@ $$b_2 = -(24 a_4*\chi^2 + 360 a_6 \chi^2) k^2 + 840 a_6 \frac{\chi^2}{A_1^4},\qu
 
 **[8]** *N.A. Kudryashov* Method for finding highly dispersive optical solitons of nonlinear differential equations, Optik, Volume 206, 2020, 163550
 
+<!--
 **[9]** *Junwoo Cho, Seungtae Nam, Hyunmo Yang, Seok-Bae Yun, Youngjoon Hong, Eunbyung Park* Separable Physics-Informed Neural Networks, Advances in Neural Information Processing Systems, 2023
+-->
