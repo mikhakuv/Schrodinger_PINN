@@ -1,5 +1,8 @@
 This tool is designed to solve one-dimensional Schrödinger equation using Physics-Informed Neural Networks technology, proposed by Raissi et al [[1]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature).  
+
+<!--
 > UPDATE: New tools are implemented. It is now possible to utilize SP_PINN, a network that features a new architecture. SP_PINN represents separate neural networks for each of the coordinates, and its output is calculated as a scalar product of the outputs of individual networks (the idea is very similar to the Separable PINN, proposed at [[9]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature)). Additionally, Seg_PINN is also implemented. This segmentation model divides the region into segments and sequentially trains a different PINN on each segment, the resulting solutions are then merged using one global PINN. Examples are available for further study: [SP_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/SP_PINN.ipynb), [Seg_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/Seg_PINN.ipynb).
+-->
 
 ## Installation
 We recommend to create new Python environment for using `Schrodinger PINN`:  
@@ -119,6 +122,13 @@ Set `PINN.loss_bal_method="relobralo"` for using active loss balancing method. B
 ### Optimizers  
 Three optimizers are available: ADAM, LBFGS and NNCG (see [[5]](https://github.com/mikhakuv/Schrodinger_PINN?tab=readme-ov-file#literature) for details). Amount of steps by each can be set using `PINN.adam_steps`, `PINN.lbfgs_steps` and `PINN.nncg_steps`. Moreover, exponential step decay can be established by `PINN.adam_step_decay`, `PINN.lbfgs_step_decay` `PINN.nncg_step_decay` combined with `PINN.decay_freq` which defines frequency of decay.  
 
+### Segmentation
+One possible solution for large-scale problems is to employ an intuitive "divide-and-conquer" approach, which entails dividing a large area into several segments, each with its own optimization problem. Separate neural networks can then be trained to solve each sub-problem independently. In this repository, this idea is implemented for the case shown in the scheme below:
+
+<img src="https://github.com/mikhakuv/Schrodinger_PINN/blob/main/pictures/domain_decomposition.png">  
+
+This segmentation model divides the region into segments and sequentially trains a different PINN on each segment, the resulting solutions are then merged using one global PINN. Usage example is available for further study: [Seg_PINN](https://github.com/mikhakuv/Schrodinger_PINN/tree/main/examples/Seg_PINN.ipynb).
+
 ## Plots and Statistics
 ### Metrics
 For accuracy evaluation, following metrics are used:  
@@ -158,7 +168,7 @@ Plenty visualizing options are available:
 <img src="https://github.com/mikhakuv/Schrodinger_PINN/blob/main/pictures/plot_errors.png">  
 
 ## Problems  
-Two problems are given as an example:
+Three problems with reference analytical solution are given as example:
 ### 2nd order  
 equation:  
 
