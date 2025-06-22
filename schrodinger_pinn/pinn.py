@@ -3,6 +3,7 @@ import math
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 from nys_newton_cg import NysNewtonCG
@@ -14,6 +15,9 @@ if torch.cuda.is_available():
     device = torch.device('cuda')
 else:
     device = torch.device('cpu')
+
+def distorted_norm(v, norm_x, norm_t, k):
+    return (v[:,0]/norm_x)**2 + (k*v[:,1]/norm_t)**2
 
 class SinActivation(torch.nn.Module):
     def __init__(self):
@@ -84,10 +88,20 @@ class PINN():
         #verbosity
         self.verbosity = 100 #loss output frequency
         self.make_res_gif = False #makes gif with residual history
+        self.display_colloc_points = False #shows collocation points on the residual gif
         #points generation options
-        self.points_gen_method = "random" #"random"/first"/"second"/"third"
-        self.points_gen_freq = 10 #points generation frequency
+        self.points_gen_method = "random" #"random"/first"/"second"/"third"/"fourth"
+        self.points_gen_freq = 10 #points generation frequency (set fraction to make points fixed)
         self.points_am = 5000 #amount of collocation points
+        #second points generation method option
+        self.lambda_1 = 0.005
+        #third points generation method options
+        self.lambda_2 = 0.01
+        #fourth points generation method options
+        self.point_movements = 1 #amount of steps during point movement modelling
+        self.point_movements_alpha = 0.005
+        self.point_movements_beta = 0.005
+        self.point_movements_distortion = 20
         #optimization options
         self.adam_steps = 1000
         self.lbfgs_steps = 10
@@ -114,13 +128,17 @@ class PINN():
         self.t_i = torch.tensor(X_i[:, 1:2], requires_grad=True).float().to(device)
         self.u = torch.tensor(u).float().to(device)
         self.v = torch.tensor(v).float().to(device)
-        self.x_b = torch.tensor(X_b[:, 0:1], requires_grad=True).float().to(device) #boundary conditions: (x_b, t_b, 0, 0)
+        self.x_b = torch.tensor(X_b[:, 0:1], requires_grad=True).float().to(device) #boundary conditions: (x_b, t_b)
         self.t_b = torch.tensor(X_b[:, 1:2], requires_grad=True).float().to(device)
         #if self.points_gen_method != "random" or self.make_res_gif: #grid of values for wise point generation or chart generation
         self.x_grid = torch.tensor(X_g[:,:,0].flatten()[:,np.newaxis], requires_grad=True).float().to(device)
         self.t_grid = torch.tensor(X_g[:,:,1].flatten()[:,np.newaxis], requires_grad=True).float().to(device)
         self.grid_shapes = X_g.shape
-        self.x_f = torch.tensor((self.llc + (self.ruc-self.llc)*lhs(2, self.points_am))[:, 0:1], requires_grad=True).float().to(device) #initial collocation points
+        #domain sizes for fourth points generation method
+        self.size_x = problem.x_1 - problem.x_0
+        self.size_t = problem.t_1 - problem.t_0
+        #initial collocation points
+        self.x_f = torch.tensor((self.llc + (self.ruc-self.llc)*lhs(2, self.points_am))[:, 0:1], requires_grad=True).float().to(device)
         self.t_f = torch.tensor((self.llc + (self.ruc-self.llc)*lhs(2, self.points_am))[:, 1:2], requires_grad=True).float().to(device)
         
         #if self.make_res_gif: #frames for gif creation
@@ -131,6 +149,7 @@ class PINN():
         self.dnn = DNN(layers).to(device)
 
         self.calc_res = problem.calc_res
+        self.bound_cond = problem.bound_cond
 
         # optimizers
         self.adam = torch.optim.Adam(
@@ -203,6 +222,10 @@ class PINN():
         self.adam.zero_grad()
         self.lbfgs.zero_grad()
         self.nncg.zero_grad()
+        if self.iter == 0 and self.points_gen_method == "fourth":
+            spoof_ruc = np.array((self.ruc[0],0.1*self.ruc[1]))
+            self.x_f = torch.tensor((self.llc + (spoof_ruc-self.llc)*lhs(2, self.points_am))[:, 0:1], requires_grad=True).float().to(device)
+            self.t_f = torch.tensor((self.llc + (spoof_ruc-self.llc)*lhs(2, self.points_am))[:, 1:2], requires_grad=True).float().to(device)
 
         u_init, v_init = self.net_uv(self.x_i, self.t_i)
         u_bound, v_bound = self.net_uv(self.x_b, self.t_b)
@@ -210,11 +233,7 @@ class PINN():
         #initial condition:
         loss_i = torch.mean(((self.u - u_init)**2 + (self.v - v_init)**2)/2)
         #boundary conditions:
-        u_x = torch.autograd.grad(u_bound,self.x_b,grad_outputs=torch.ones_like(u_bound),retain_graph=True,create_graph=True)[0]
-        u_xx = torch.autograd.grad(u_x,self.x_b,grad_outputs=torch.ones_like(u_x),retain_graph=True,create_graph=True)[0]
-        v_x = torch.autograd.grad(v_bound,self.x_b,grad_outputs=torch.ones_like(v_bound),retain_graph=True,create_graph=True)[0]
-        v_xx = torch.autograd.grad(v_x,self.x_b,grad_outputs=torch.ones_like(v_x),retain_graph=True,create_graph=True)[0]
-        loss_b = torch.mean((u_bound**2 + u_x**2 + u_xx**2 + v_bound**2 + v_x**2 + v_xx**2)/6)
+        loss_b = self.bound_cond(u_bound, v_bound, self.x_b, self.t_b)
         #equation condition:
         loss_f = torch.mean((f_u_pred**2 + f_v_pred**2)/2)
         if self.causal_loss == True and self.train_finished == False and loss_f<1: #last condition implies protection against loss_f spikes
@@ -246,7 +265,7 @@ class PINN():
             self.L_b = loss_b.item()
             self.L_f = loss_f.item()
             random_lookback = np.random.random()
-            if self.L_f/self.L_f_0<1 and self.L_f/L_f_prev<1: #protection against loss_f spikes
+            if self.L_in/self.L_in_0<5 and self.L_in/L_in_prev<5 and self.L_b/self.L_b_0<5 and self.L_b/L_b_prev<5 and self.L_f/self.L_f_0<5 and self.L_f/L_f_prev<5: #protection against loss_f spikes
                 lambda_i_0 = math.exp(self.L_in/self.L_in_0)/(math.exp(self.L_in/self.L_in_0) + math.exp(self.L_b/self.L_b_0) + math.exp(self.L_f/self.L_f_0))
                 lambda_b_0 = math.exp(self.L_b/self.L_b_0)/(math.exp(self.L_in/self.L_in_0) + math.exp(self.L_b/self.L_b_0) + math.exp(self.L_f/self.L_f_0))
                 lambda_f_0 = math.exp(self.L_f/self.L_f_0)/(math.exp(self.L_in/self.L_in_0) + math.exp(self.L_b/self.L_b_0) + math.exp(self.L_f/self.L_f_0))
@@ -272,6 +291,10 @@ class PINN():
             t_grid=self.t_grid.detach().cpu().numpy().reshape((self.grid_shapes[0],self.grid_shapes[1]))
             fig, ax = plt.subplots()
             c = ax.pcolormesh(t_grid, x_grid, residual, shading="nearest", cmap='Reds', vmin=0, vmax=0.1)
+            if self.display_colloc_points:
+                x_f = self.x_f.detach().cpu().numpy()
+                t_f = self.t_f.detach().cpu().numpy()
+                plt.scatter(t_f,x_f,s=0.5,c="black",alpha=0.5)
             ax.set_title(f'iter={self.iter}')
             ax.axis([np.min(t_grid), np.max(t_grid), np.min(x_grid), np.max(x_grid)])
             fig.colorbar(c, ax=ax)
@@ -281,13 +304,45 @@ class PINN():
             self.frames.append(frame)
 
         if self.iter % self.points_gen_freq == 0: #generating new points
-            lambda_1 = 0.005
-            lambda_2 = 0.01
+            lambda_1 = self.lambda_1
+            lambda_2 = self.lambda_2
+            alpha = self.point_movements_alpha
+            beta = self.point_movements_beta
+            distortion = self.point_movements_distortion
+            gamma = 1/30
             if self.points_gen_method == "random": #random points choice
                 random_points = self.llc + (self.ruc-self.llc)*lhs(2, self.points_am)
                 self.x_f = torch.tensor(random_points[:, 0:1], requires_grad=True).float().to(device)
                 self.t_f = torch.tensor(random_points[:, 1:2], requires_grad=True).float().to(device)
-            else:
+            elif self.points_gen_method == "fourth": #points are particles attracted to high residual and repelled from each other
+                f_u_pred, f_v_pred = self.net_f(self.x_grid, self.t_grid)
+                residual = ((f_u_pred**2 + f_v_pred**2)**0.5).detach()
+                #mask = (residual - torch.mean(residual))<=0
+                #residual[mask] = 0
+                res_coords = torch.hstack((self.x_grid,self.t_grid)).detach()
+                colloc_coords = torch.hstack((self.x_f,self.t_f)).detach()
+                res_coords_amt = res_coords.shape[0]
+                colloc_coords_amt = colloc_coords.shape[0]
+                residual_mat = residual.unsqueeze(2).expand(-1,-1,colloc_coords_amt)
+                res_coords_mat = res_coords.unsqueeze(2).expand(-1,-1,colloc_coords_amt)
+                colloc_coords_mat = colloc_coords.unsqueeze(0).expand(res_coords_amt,-1,-1).permute(0, 2, 1)
+                distorted_norm_mat = distorted_norm(res_coords_mat-colloc_coords_mat, self.size_x, self.size_t, distortion).unsqueeze(1).expand(-1,2,-1)
+                a_vec = torch.sum(residual_mat*(res_coords_mat-colloc_coords_mat)/(distorted_norm_mat+gamma), axis=0)
+                b = torch.sum(residual_mat[:,0,:]/(distorted_norm(res_coords_mat-colloc_coords_mat, self.size_x, self.size_t, distortion)+gamma), axis=0)
+                colloc_coords_mat = colloc_coords.unsqueeze(2).expand(-1,-1,colloc_coords_amt)
+                distorted_norm_mat = distorted_norm(colloc_coords_mat - colloc_coords_mat.permute(2, 1, 0), self.size_x, self.size_t, distortion).unsqueeze(1).expand(-1,2,-1)
+                c_vec = torch.sum(torch.nan_to_num((colloc_coords_mat - colloc_coords_mat.permute(2, 1, 0))/(distorted_norm_mat+gamma), nan=0.0, posinf=0.0, neginf=0.0), axis = 0)
+                d = torch.sum(torch.nan_to_num(1/(distorted_norm_mat+gamma), nan=0.0, posinf=0.0, neginf=0.0), axis = 0)
+                delta = alpha*a_vec/b - beta*c_vec/d
+                if not torch.isnan(delta).any():
+                    self.x_f += delta[0:1,:].T.detach()
+                    self.t_f += delta[1:2,:].T.detach()
+                    delta=0.0001
+                    self.x_f = torch.where(self.x_f<self.llc[0], self.llc[0]+delta, self.x_f)
+                    self.x_f = torch.where(self.x_f>self.ruc[0], self.ruc[0]-delta, self.x_f)
+                    self.t_f = torch.where(self.t_f<self.llc[1], self.llc[1]+delta, self.t_f)
+                    self.t_f = torch.where(self.t_f>self.ruc[1], self.ruc[1]-delta, self.t_f)
+            else: #probability approach for points generation
                 f_u_pred, f_v_pred = self.net_f(self.x_grid, self.t_grid)
                 residual = ((f_u_pred**2 + f_v_pred**2)**0.5).detach().cpu().numpy()
                 max_residual = np.max(residual)
@@ -387,24 +442,38 @@ class PINN():
         plt.title('Loss(iter)')
         return plt.show()
     
-    def plot_residual(self, X, T):
+    def plot_residual(self, X, T, view='2d'):
         X_tensor = torch.tensor(X.flatten()[:,np.newaxis], requires_grad=True).float()
         T_tensor = torch.tensor(T.flatten()[:,np.newaxis], requires_grad=True).float()
         Real_Loss, Complex_Loss = self.net_f(X_tensor.to(device), T_tensor.to(device))
         flatten_Loss = (Real_Loss**2 + Complex_Loss**2)**0.5
         Loss = torch.reshape(flatten_Loss,(X.shape[0],X.shape[1])).cpu().detach().numpy()
-        fig, ax = plt.subplots(1, 1, figsize=(6,5), dpi=100)
-        plt.title('Residual(t,x)')
-        ax.set(xlabel='$t$', ylabel='$x$')
-        c = ax.pcolormesh(T, X, Loss, shading='nearest', cmap='Reds')
-        ax.axis([T.min(), T.max(), X.min(), X.max()])
-        fig.colorbar(c, ax=ax)
-        return plt.show()
+        if view == '2d':
+            fig, ax = plt.subplots(1, 1, figsize=(6,5), dpi=100)
+            plt.title('Residual(t,x)')
+            ax.set(xlabel='$t$', ylabel='$x$')
+            c = ax.pcolormesh(T, X, Loss, shading='nearest', cmap='Reds')
+            ax.axis([T.min(), T.max(), X.min(), X.max()])
+            fig.colorbar(c, ax=ax)
+            return plt.show()
+        elif view == '3d':
+            fig = plt.figure(figsize=(8, 6), dpi=100)
+            ax = fig.add_subplot(111, projection='3d')
+            ax.set_title('Residual(t,x)')
+            surf = ax.plot_surface(X, T, Loss, cmap='Reds', edgecolor='none')
+            ax.set_xlabel('$x$')
+            ax.set_ylabel('$t$')
+            ax.set_zlim((0,3))
+            return plt.show()
+        else:
+            print("Choose view properly: '2d' or '3d'")
+            return -1
 
     def set_params_as(self, another_PINN): #sets same hyperparameters as in another_PINN (this method is used in Seg_PINN)
         #verbosity
         self.verbosity = another_PINN.verbosity
         self.make_res_gif = another_PINN.make_res_gif
+        self.display_colloc_points = another_PINN.display_colloc_points
         #points generation options
         self.points_gen_method = another_PINN.points_gen_method
         self.points_gen_freq = another_PINN.points_gen_freq
@@ -469,10 +538,20 @@ class SP_PINN(PINN):
         #verbosity
         self.verbosity = 100 #loss output frequency
         self.make_res_gif = False #makes gif with residual history
+        self.display_colloc_points = False #shows collocation points on the residual gif
         #points generation options
-        self.points_gen_method = "random" #"random"/first"/"second"/"third"
-        self.points_gen_freq = 10 #points generation frequency
+        self.points_gen_method = "random" #"random"/first"/"second"/"third"/"fourth"
+        self.points_gen_freq = 10 #points generation frequency (set fraction to make points fixed)
         self.points_am = 5000 #amount of collocation points
+        #second points generation method option
+        self.lambda_1 = 0.005
+        #third points generation method options
+        self.lambda_2 = 0.01
+        #fourth points generation method options
+        self.point_movements = 1 #amount of steps during point movement modelling
+        self.point_movements_alpha = 0.005
+        self.point_movements_beta = 0.005
+        self.point_movements_distortion = 20
         #optimization options
         self.adam_steps = 1000
         self.lbfgs_steps = 10
@@ -505,7 +584,9 @@ class SP_PINN(PINN):
         self.x_grid = torch.tensor(X_g[:,:,0].flatten()[:,np.newaxis], requires_grad=True).float().to(device)
         self.t_grid = torch.tensor(X_g[:,:,1].flatten()[:,np.newaxis], requires_grad=True).float().to(device)
         self.grid_shapes = X_g.shape
-        self.x_f = torch.tensor((self.llc + (self.ruc-self.llc)*lhs(2, self.points_am))[:, 0:1], requires_grad=True).float().to(device) #initial collocation points
+        
+        #initial collocation points
+        self.x_f = torch.tensor((self.llc + (self.ruc-self.llc)*lhs(2, self.points_am))[:, 0:1], requires_grad=True).float().to(device)
         self.t_f = torch.tensor((self.llc + (self.ruc-self.llc)*lhs(2, self.points_am))[:, 1:2], requires_grad=True).float().to(device)
         
         self.frames=[]
@@ -515,6 +596,7 @@ class SP_PINN(PINN):
         self.dnn = SP_DNN(x_layers, t_layers).to(device)
 
         self.calc_res = problem.calc_res
+        self.bound_cond = problem.bound_cond
 
         # optimizers
         self.adam = torch.optim.Adam(
@@ -677,8 +759,8 @@ class Seg_PINN():
         plt.legend()
         return plt.show()
 
-    def plot_residual(self, X, T):
-        return self.merge_PINN.plot_residual(X, T)
+    def plot_residual(self, X, T, view='2d'):
+        return self.merge_PINN.plot_residual(X, T, view=view)
 
 def make_points(problem, init_points_amt, bound_points_amt, grid_resolution_x, grid_resolution_t):
     x_0, x_1 = problem.x_0, problem.x_1
